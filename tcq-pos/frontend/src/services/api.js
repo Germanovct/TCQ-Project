@@ -6,9 +6,7 @@
 
 class ApiService {
   constructor() {
-    // Si existe la variable VITE_API_URL (en Vercel), la usa. Si no, asume que está en local.
-    const host = window.location.hostname;
-    this.baseURL = import.meta.env.VITE_API_URL || `http://${host}:8000/api/v1`;
+    this.baseURL = import.meta.env.VITE_API_URL || 'https://tcq-project.onrender.com/api/v1';
     this.token = localStorage.getItem('tcq_token') || null;
   }
 
@@ -29,7 +27,7 @@ class ApiService {
     const config = { method, headers };
     if (body) config.body = JSON.stringify(body);
 
-    const res = await fetch(`${API_BASE}${path}`, config);
+    const res = await fetch(`${this.baseURL}${path}`, config);
     const data = await res.json();
     if (!res.ok) throw { status: res.status, detail: data.detail || 'Error' };
     return data;
