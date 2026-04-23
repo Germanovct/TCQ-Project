@@ -309,6 +309,23 @@ export default function App() {
   const [view, setView] = useState('tables');
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
   const [qrModal, setQrModal] = useState(null); // { url, amount, transaction_id }
+  const [showInstallModal, setShowInstallModal] = useState(false);
+
+  // PWA Install Modal (show once per device)
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    const alreadySeen = localStorage.getItem('tcq_pos_install_seen');
+    if (!isStandalone && !alreadySeen) {
+      setTimeout(() => setShowInstallModal(true), 1000);
+    }
+  }, []);
+
+  const dismissInstallModal = () => {
+    setShowInstallModal(false);
+    localStorage.setItem('tcq_pos_install_seen', 'true');
+  };
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
   // ── WebSocket for Real-time Payment Updates ──
   const wsUrl = import.meta.env.VITE_WS_URL || `ws://${window.location.hostname}:8000/api/v1/dashboard/ws`;
@@ -540,6 +557,40 @@ export default function App() {
       {showTeam && <TeamManager onClose={() => setShowTeam(false)} toast={toast} />}
       {showProducts && <ProductManager onClose={() => setShowProducts(false)} toast={toast} onProductsChanged={fetchProducts} />}
       {showTopUp && <TopUpModal onClose={() => setShowTopUp(false)} toast={toast} />}
+
+      {/* PWA Install Modal */}
+      {showInstallModal && (
+        <div className="modal-overlay" style={{ zIndex: 2000 }}>
+          <div className="modal" style={{ textAlign: 'center' }}>
+            <img src="/tcqlogo.jpg" alt="TCQ" style={{ width: '80px', height: '80px', borderRadius: '12px', marginBottom: '1rem', objectFit: 'cover' }} />
+            <h2 className="modal-title" style={{ marginBottom: '0.5rem' }}>📱 Instalá TCQ POS</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '1rem', textAlign: 'center' }}>
+              Agregá la app a tu pantalla de inicio para usarla como tablet de barra.
+            </p>
+            {isIOS ? (
+              <div style={{ background: 'var(--bg-elevated)', borderRadius: '12px', padding: '1rem', marginBottom: '1rem', textAlign: 'left' }}>
+                <p style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Pasos en iPhone/iPad:</p>
+                <p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>
+                  1️⃣ Tocá <strong style={{ color: 'var(--brand-primary-light)' }}>Compartir</strong> (↑ barra de abajo)<br/>
+                  2️⃣ Elegí <strong style={{ color: 'var(--brand-primary-light)' }}>Agregar a Inicio</strong><br/>
+                  3️⃣ Tocá <strong style={{ color: 'var(--brand-primary-light)' }}>Agregar</strong>
+                </p>
+              </div>
+            ) : (
+              <div style={{ background: 'var(--bg-elevated)', borderRadius: '12px', padding: '1rem', marginBottom: '1rem', textAlign: 'left' }}>
+                <p style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Pasos en Android:</p>
+                <p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>
+                  1️⃣ Tocá los <strong style={{ color: 'var(--brand-primary-light)' }}>3 puntitos ⋮</strong> (arriba a la derecha)<br/>
+                  2️⃣ Elegí <strong style={{ color: 'var(--brand-primary-light)' }}>Instalar aplicación</strong>
+                </p>
+              </div>
+            )}
+            <button className="btn btn-success" style={{ width: '100%', justifyContent: 'center' }} onClick={dismissInstallModal}>
+              ¡Entendido!
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* MP QR Modal */}
       {qrModal && (
