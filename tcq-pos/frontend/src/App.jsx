@@ -548,7 +548,47 @@ export default function App() {
 
   // Show login if not authenticated
   if (!authChecked) return null;
-  if (!user) return <><Toasts toasts={toasts} /><LoginScreen onLogin={handleLogin} /></>;
+  if (!user) {
+    return (
+      <>
+        <Toasts toasts={toasts} />
+        {/* PWA Install Modal on Login Screen */}
+        {showInstallModal && (
+          <div className="modal-overlay" style={{ zIndex: 2000 }}>
+            <div className="modal" style={{ textAlign: 'center' }}>
+              <img src="/tcqlogo.jpg" alt="TCQ" style={{ width: '80px', height: '80px', borderRadius: '12px', marginBottom: '1rem', objectFit: 'cover' }} />
+              <h2 className="modal-title" style={{ marginBottom: '0.5rem' }}>📱 Instalá TCQ POS</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '1rem', textAlign: 'center' }}>
+                Agregá la app a tu pantalla de inicio para usarla como tablet de barra.
+              </p>
+              {isIOS ? (
+                <div style={{ background: 'var(--bg-elevated)', borderRadius: '12px', padding: '1rem', marginBottom: '1rem', textAlign: 'left' }}>
+                  <p style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Pasos en iPhone/iPad:</p>
+                  <p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>
+                    1️⃣ Tocá <strong style={{ color: 'var(--brand-primary-light)' }}>Compartir</strong> (↑ barra de abajo)<br/>
+                    2️⃣ Elegí <strong style={{ color: 'var(--brand-primary-light)' }}>Agregar a Inicio</strong><br/>
+                    3️⃣ Tocá <strong style={{ color: 'var(--brand-primary-light)' }}>Agregar</strong>
+                  </p>
+                </div>
+              ) : (
+                <div style={{ background: 'var(--bg-elevated)', borderRadius: '12px', padding: '1rem', marginBottom: '1rem', textAlign: 'left' }}>
+                  <p style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Pasos en Android:</p>
+                  <p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>
+                    1️⃣ Tocá los <strong style={{ color: 'var(--brand-primary-light)' }}>3 puntitos ⋮</strong> (arriba a la derecha)<br/>
+                    2️⃣ Elegí <strong style={{ color: 'var(--brand-primary-light)' }}>Instalar aplicación</strong>
+                  </p>
+                </div>
+              )}
+              <button className="btn btn-success" style={{ width: '100%', justifyContent: 'center' }} onClick={dismissInstallModal}>
+                ¡Entendido!
+              </button>
+            </div>
+          </div>
+        )}
+        <LoginScreen onLogin={handleLogin} />
+      </>
+    );
+  }
 
   return (
     <>
