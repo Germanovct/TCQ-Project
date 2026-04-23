@@ -26,7 +26,13 @@ class MercadoPagoService:
             return {"success": False, "error": "MP not configured", "qr_data": None, "preference_id": None}
         try:
             mp_items = [{"title": i["name"], "quantity": i["quantity"], "unit_price": float(i["unit_price"]), "currency_id": "ARS"} for i in items]
-            pref = self._sdk.preference().create({"items": mp_items, "external_reference": str(transaction_id), "statement_descriptor": "TCQ Club", "metadata": {"transaction_id": str(transaction_id)}})
+            pref = self._sdk.preference().create({
+                "items": mp_items, 
+                "external_reference": str(transaction_id), 
+                "statement_descriptor": "TCQ Club", 
+                "metadata": {"transaction_id": str(transaction_id)},
+                "notification_url": "https://tcq-project.onrender.com/api/v1/webhooks/mercadopago"
+            })
             resp = pref.get("response", {})
             return {"success": True, "preference_id": resp.get("id"), "qr_data": resp.get("init_point"), "sandbox_qr": resp.get("sandbox_init_point")}
         except Exception as e:
