@@ -32,8 +32,8 @@ export default function App() {
   useEffect(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     if (!isStandalone) {
-      // Show our custom banner
-      setTimeout(() => setShowPwaBanner(true), 1500);
+      // Show our custom banner almost immediately
+      setTimeout(() => setShowPwaBanner(true), 500);
     }
 
     const handleBeforeInstallPrompt = (e) => {
@@ -154,7 +154,7 @@ export default function App() {
       {!user ? (
         <div className="auth-view">
           <div className="brand-header">
-            <h1>⚡ TCQ Club</h1>
+            <img src="/tcqlogo.jpg" alt="TCQ Logo" style={{ width: '120px', height: '120px', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-sm)', objectFit: 'cover' }} />
             <p>Tu Billetera Cashless</p>
           </div>
           
