@@ -33,10 +33,16 @@ function TopBar({ terminal, dailyTotal, onOpenRegister, onCloseRegister, onShowR
           </span>
         </div>
       </div>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>Balance Caja</div>
-        <div className="topbar-balance">${(dailyTotal || 0).toLocaleString('es-AR', { minimumFractionDigits: 0 })}</div>
-      </div>
+      
+      {user?.role === 'admin' ? (
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>Balance Caja</div>
+          <div className="topbar-balance">${(dailyTotal || 0).toLocaleString('es-AR', { minimumFractionDigits: 0 })}</div>
+        </div>
+      ) : (
+        <div style={{ flex: 1 }}></div>
+      )}
+
       <div style={{ textAlign: 'right' }}>
         <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--brand-primary-light)' }}>🍺 {user?.full_name}</div>
         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{user?.role}</div>
@@ -48,9 +54,11 @@ function TopBar({ terminal, dailyTotal, onOpenRegister, onCloseRegister, onShowR
           </button>
         )}
         {user?.role === 'admin' && (
-          <button className="btn btn-ghost" onClick={onShowProducts}>🍔 Carta</button>
+          <>
+            <button className="btn btn-ghost" onClick={onShowProducts}>🍔 Carta</button>
+            <button className="btn btn-ghost" onClick={onShowTeam}>👥 Equipo</button>
+          </>
         )}
-        <button className="btn btn-ghost" onClick={onShowTeam}>👥 Equipo</button>
         <button className="btn btn-ghost" onClick={onShowReport}>📊 Reporte</button>
         {!isOpen ? (
           <button className="btn btn-success" onClick={onOpenRegister}>Abrir Caja</button>

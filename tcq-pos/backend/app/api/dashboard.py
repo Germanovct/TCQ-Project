@@ -11,6 +11,8 @@ from datetime import datetime, timezone, timedelta
 from app.database import get_db, async_session
 from app.models.transaction import Transaction, TransactionItem
 from app.models.product import Product
+from app.models.user import User
+from app.api.auth import get_current_active_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -50,23 +52,33 @@ async def dashboard_websocket(websocket: WebSocket):
 
 
 @router.get("/summary")
-async def get_daily_summary(db: AsyncSession = Depends(get_db)):
+async def get_daily_summary(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """Get today's sales summary for the dashboard."""
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # Base filters
+    filters = [Transaction.status == "COMPLETED", Transaction.created_at >= today_start]
+    
+    # If barman, only show their own sales
+    if current_user.role == "barman":
+        filters.append(Transaction.operator_id == current_user.id)
 
     # Total revenue and count
     result = await db.execute(
         select(
             func.count(Transaction.id).label("count"),
             func.coalesce(func.sum(Transaction.total_amount), 0).label("total"),
-        ).where(Transaction.status == "COMPLETED", Transaction.created_at >= today_start)
+        ).where(*filters)
     )
     row = result.one()
 
     # Revenue by method
     method_result = await db.execute(
         select(Transaction.method, func.sum(Transaction.total_amount))
-        .where(Transaction.status == "COMPLETED", Transaction.created_at >= today_start)
+        .where(*filters)
         .group_by(Transaction.method)
     )
     revenue_by_method = {m: float(t) for m, t in method_result.all()}
@@ -76,7 +88,7 @@ async def get_daily_summary(db: AsyncSession = Depends(get_db)):
         select(Product.name, func.sum(TransactionItem.quantity).label("qty"), func.sum(TransactionItem.subtotal).label("rev"))
         .join(TransactionItem, TransactionItem.product_id == Product.id)
         .join(Transaction, Transaction.id == TransactionItem.transaction_id)
-        .where(Transaction.status == "COMPLETED", Transaction.created_at >= today_start)
+        .where(*filters)
         .group_by(Product.name)
         .order_by(func.sum(TransactionItem.quantity).desc())
         .limit(10)
