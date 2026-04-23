@@ -1,4 +1,19 @@
-*/node_modules
-*/venv
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
 .env
-*.db
+tcq_pos.db
+
+# Node
+node_modules/
+dist/
+build/
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
