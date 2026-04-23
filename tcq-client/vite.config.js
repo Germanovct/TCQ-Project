@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['tcq-icon.svg'],
+      includeAssets: ['tcqlogo.jpg'],
       manifest: {
         name: 'TCQ Club',
         short_name: 'TCQ',
@@ -17,14 +17,14 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: 'tcq-icon.svg',
+            src: 'tcqlogo.jpg',
             sizes: '192x192',
-            type: 'image/svg+xml'
+            type: 'image/jpeg'
           },
           {
-            src: 'tcq-icon.svg',
+            src: 'tcqlogo.jpg',
             sizes: '512x512',
-            type: 'image/svg+xml'
+            type: 'image/jpeg'
           }
         ]
       }

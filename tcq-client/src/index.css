@@ -254,7 +254,7 @@ body { background: var(--bg-base); color: var(--text-primary); -webkit-font-smoo
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--bg-elevated);
+  background: #000000;
   padding: var(--space-md);
   border-top: 1px solid var(--border-subtle);
   display: flex;
