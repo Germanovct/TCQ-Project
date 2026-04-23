@@ -1,8 +1,6 @@
 class ApiClient {
   constructor() {
-    // Si existe la variable VITE_API_URL (en Vercel), la usa. Si no, asume que está en local.
-    const host = window.location.hostname;
-    this.baseURL = import.meta.env.VITE_API_URL || `http://${host}:8000/api/v1`;
+    this.baseURL = import.meta.env.VITE_API_URL || 'https://tcq-project.onrender.com/api/v1';
     this.token = localStorage.getItem('tcq_client_token');
   }
 
