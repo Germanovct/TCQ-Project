@@ -26,9 +26,16 @@ export default function App() {
   // Modals & PWA
   const [showLoadModal, setShowLoadModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showPwaBanner, setShowPwaBanner] = useState(false);
 
   // Handle PWA Install Prompt
   useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (!isStandalone) {
+      // Show our custom banner
+      setTimeout(() => setShowPwaBanner(true), 1500);
+    }
+
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -38,11 +45,21 @@ export default function App() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+        setShowPwaBanner(false);
+      }
+    } else {
+      // Manual fallback for iOS and strict Androids
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      if (isIOS) {
+        alert('📱 Para instalar en iPhone:\n\n1. Tocá el botón "Compartir" (el cuadradito con la flecha para arriba en la barra de abajo)\n2. Elegí "Agregar a Inicio"');
+      } else {
+        alert('📱 Para instalar en Android:\n\n1. Tocá los 3 puntitos del navegador (arriba a la derecha)\n2. Elegí "Instalar aplicación" o "Agregar a la pantalla principal"');
+      }
     }
   };
 
@@ -124,7 +141,7 @@ export default function App() {
     <div className="app-container">
       <Toasts toasts={toasts} />
 
-      {deferredPrompt && (
+      {showPwaBanner && (
         <div className="pwa-prompt">
           <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>📱 Instalar TCQ Club</div>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Descargá la app para tener acceso rápido a tu QR y saldo.</p>
