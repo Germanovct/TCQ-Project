@@ -25,43 +25,23 @@ export default function App() {
   
   // Modals & PWA
   const [showLoadModal, setShowLoadModal] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showPwaBanner, setShowPwaBanner] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
 
-  // Handle PWA Install Prompt
+  // Show install modal on first visit (if not already installed as PWA)
   useEffect(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    if (!isStandalone) {
-      // Show our custom banner almost immediately
-      setTimeout(() => setShowPwaBanner(true), 500);
+    const alreadySeen = localStorage.getItem('tcq_install_seen');
+    if (!isStandalone && !alreadySeen) {
+      setTimeout(() => setShowInstallModal(true), 800);
     }
-
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
 
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
-        setShowPwaBanner(false);
-      }
-    } else {
-      // Manual fallback for iOS and strict Androids
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      if (isIOS) {
-        alert('📱 Para instalar en iPhone:\n\n1. Tocá el botón "Compartir" (el cuadradito con la flecha para arriba en la barra de abajo)\n2. Elegí "Agregar a Inicio"');
-      } else {
-        alert('📱 Para instalar en Android:\n\n1. Tocá los 3 puntitos del navegador (arriba a la derecha)\n2. Elegí "Instalar aplicación" o "Agregar a la pantalla principal"');
-      }
-    }
+  const dismissInstallModal = () => {
+    setShowInstallModal(false);
+    localStorage.setItem('tcq_install_seen', 'true');
   };
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
   const toast = useCallback((message, type = 'success') => {
     const id = Date.now();
@@ -141,13 +121,38 @@ export default function App() {
     <div className="app-container">
       <Toasts toasts={toasts} />
 
-      {showPwaBanner && (
-        <div className="pwa-prompt">
-          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>📱 Instalar TCQ Club</div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Descargá la app para tener acceso rápido a tu QR y saldo.</p>
-          <button className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }} onClick={handleInstallClick}>
-            Instalar App
-          </button>
+      {showInstallModal && (
+        <div className="modal-overlay" style={{ zIndex: 2000 }}>
+          <div className="modal" style={{ textAlign: 'center' }}>
+            <img src="/tcqlogo.jpg" alt="TCQ" style={{ width: '80px', height: '80px', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-md)', objectFit: 'cover' }} />
+            <h3 className="modal-title" style={{ marginBottom: 'var(--space-sm)' }}>📱 Instalá TCQ Club</h3>
+            <p className="modal-text">
+              Agregá la app a tu pantalla de inicio para acceder rápido a tu QR y saldo.
+            </p>
+            
+            {isIOS ? (
+              <div style={{ background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', padding: 'var(--space-md)', marginBottom: 'var(--space-md)', textAlign: 'left' }}>
+                <p style={{ fontWeight: 700, marginBottom: 'var(--space-sm)', color: 'var(--text-primary)' }}>Pasos en iPhone:</p>
+                <p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>
+                  1️⃣ Tocá el botón <strong style={{ color: 'var(--brand-primary-light)' }}>Compartir</strong> (el cuadradito con la flecha ↑ en la barra de abajo)<br/>
+                  2️⃣ Deslizá y elegí <strong style={{ color: 'var(--brand-primary-light)' }}>Agregar a Inicio</strong><br/>
+                  3️⃣ Tocá <strong style={{ color: 'var(--brand-primary-light)' }}>Agregar</strong>
+                </p>
+              </div>
+            ) : (
+              <div style={{ background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', padding: 'var(--space-md)', marginBottom: 'var(--space-md)', textAlign: 'left' }}>
+                <p style={{ fontWeight: 700, marginBottom: 'var(--space-sm)', color: 'var(--text-primary)' }}>Pasos en Android:</p>
+                <p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>
+                  1️⃣ Tocá los <strong style={{ color: 'var(--brand-primary-light)' }}>3 puntitos ⋮</strong> del navegador (arriba a la derecha)<br/>
+                  2️⃣ Elegí <strong style={{ color: 'var(--brand-primary-light)' }}>Instalar aplicación</strong> o "Agregar a pantalla principal"
+                </p>
+              </div>
+            )}
+            
+            <button className="btn btn-primary" onClick={dismissInstallModal}>
+              ¡Entendido!
+            </button>
+          </div>
         </div>
       )}
       
