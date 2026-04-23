@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: tcq_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tcq_pos
+      POSTGRES_USER: tcq_user
+      POSTGRES_PASSWORD: tcq_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tcq_user -d tcq_pos"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
