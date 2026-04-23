@@ -12,7 +12,7 @@ from app.database import get_db, async_session
 from app.models.transaction import Transaction, TransactionItem
 from app.models.product import Product
 from app.models.user import User
-from app.api.auth import get_current_active_user
+from app.utils.security import get_current_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -54,7 +54,7 @@ async def dashboard_websocket(websocket: WebSocket):
 @router.get("/summary")
 async def get_daily_summary(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Get today's sales summary for the dashboard."""
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
