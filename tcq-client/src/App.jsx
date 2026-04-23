@@ -23,8 +23,28 @@ export default function App() {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ full_name: '', email: '', password: '' });
   
-  // Modals
+  // Modals & PWA
   const [showLoadModal, setShowLoadModal] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  // Handle PWA Install Prompt
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
 
   const toast = useCallback((message, type = 'success') => {
     const id = Date.now();
@@ -103,6 +123,16 @@ export default function App() {
   return (
     <div className="app-container">
       <Toasts toasts={toasts} />
+
+      {deferredPrompt && (
+        <div className="pwa-prompt">
+          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>📱 Instalar TCQ Club</div>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Descargá la app para tener acceso rápido a tu QR y saldo.</p>
+          <button className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }} onClick={handleInstallClick}>
+            Instalar App
+          </button>
+        </div>
+      )}
       
       {!user ? (
         <div className="auth-view">
