@@ -54,7 +54,11 @@ app = FastAPI(
 # CORS — allow the React PWA frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Restrict in production
+    allow_origins=[
+        "http://localhost:5173",             # Frontend local de Vite
+        "https://tcq-project.onrender.com",  # Dominio en producción
+        "http://localhost:4173"              # Vite preview
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
