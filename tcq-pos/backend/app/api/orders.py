@@ -6,12 +6,38 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import UUID
+import base64
+import json
 from app.database import get_db
 from app.schemas.order import CreateOrderRequest, CreateOrderResponse, TransactionResponse
 from app.services.payment_service import PaymentService
 from app.models.transaction import Transaction
+from app.config import get_settings
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
+
+def generate_afip_qr(txn, settings) -> str:
+    if not txn.afip_cae:
+        return ""
+    qr_data = {
+        "ver": 1,
+        "fecha": txn.created_at.strftime('%Y-%m-%d'),
+        "cuit": settings.AFIP_CUIT,
+        "ptoVta": settings.AFIP_PTO_VTA,
+        "tipoCmp": 11,
+        "nroCmp": txn.afip_voucher_num,
+        "importe": float(txn.total_amount),
+        "moneda": "PES",
+        "ctz": 1.0,
+        "tipoDocRec": 99,
+        "nroDocRec": 0,
+        "tipoCodAut": "E",
+        "codAut": int(txn.afip_cae) if str(txn.afip_cae).isdigit() else txn.afip_cae
+    }
+    json_data = json.dumps(qr_data)
+    b64_data = base64.b64encode(json_data.encode('utf-8')).decode('utf-8')
+    return f"https://www.afip.gob.ar/fe/qr/?p={b64_data}"
+
 
 
 @router.post("/create-order", response_model=dict)
@@ -59,11 +85,13 @@ async def generate_fiscal_ticket(transaction_id: UUID, db: AsyncSession = Depend
     if not txn:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
+    settings = get_settings()
     if txn.afip_cae:
         return {
             "cae": txn.afip_cae,
             "vto_cae": txn.afip_vto_cae,
-            "nro_comprobante": txn.afip_voucher_num
+            "nro_comprobante": txn.afip_voucher_num,
+            "qr_url": generate_afip_qr(txn, settings)
         }
 
     from app.services.afip_service import afip_service
@@ -80,7 +108,8 @@ async def generate_fiscal_ticket(transaction_id: UUID, db: AsyncSession = Depend
     return {
         "cae": txn.afip_cae,
         "vto_cae": txn.afip_vto_cae,
-        "nro_comprobante": txn.afip_voucher_num
+        "nro_comprobante": txn.afip_voucher_num,
+        "qr_url": generate_afip_qr(txn, settings)
     }
 
 @router.get("/{transaction_id}/receipt")
@@ -98,6 +127,7 @@ async def get_public_receipt(transaction_id: UUID, db: AsyncSession = Depends(ge
     if txn.items_snapshot:
         items = txn.items_snapshot
     
+    settings = get_settings()
     return {
         "id": str(txn.id),
         "method": txn.method,
@@ -108,6 +138,7 @@ async def get_public_receipt(transaction_id: UUID, db: AsyncSession = Depends(ge
         "afip": {
             "cae": txn.afip_cae,
             "vto_cae": txn.afip_vto_cae,
-            "nro_comprobante": txn.afip_voucher_num
+            "nro_comprobante": txn.afip_voucher_num,
+            "qr_url": generate_afip_qr(txn, settings)
         } if txn.afip_cae else None
     }

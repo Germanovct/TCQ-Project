@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 
 export default function PublicTicket({ transactionId }) {
@@ -69,6 +70,15 @@ export default function PublicTicket({ transactionId }) {
           <div>Factura B Nro: 0001-{String(afip.nro_comprobante).padStart(8, '0')}</div>
           <div>CAE: {afip.cae}</div>
           <div>Vto CAE: {afip.vto_cae}</div>
+          
+          {afip.qr_url && (
+            <div style={{ marginTop: '1rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.5rem', color: '#666' }}>QR Fiscal AFIP</div>
+              <div style={{ background: '#fff', padding: '0.5rem', display: 'inline-block', borderRadius: '8px' }}>
+                <QRCodeSVG value={afip.qr_url} size={140} />
+              </div>
+            </div>
+          )}
         </div>
       )}
 

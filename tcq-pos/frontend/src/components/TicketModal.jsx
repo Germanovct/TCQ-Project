@@ -58,13 +58,27 @@ export default function TicketModal({ data, onClose }) {
             </div>
           )}
 
-          {transaction_id && (
+          {transaction_id && !fiscalData?.qr_url && (
             <div style={{ marginTop: '1rem', textAlign: 'center' }}>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
                 Escanea para ver tu ticket digital
               </div>
               <div style={{ background: '#fff', padding: '0.5rem', display: 'inline-block', borderRadius: '8px' }}>
                 <QRCodeSVG value={`https://tcq-pos.netlify.app/ticket/${transaction_id}`} size={140} />
+              </div>
+            </div>
+          )}
+
+          {fiscalData?.qr_url && (
+            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>
+                QR Fiscal AFIP
+              </div>
+              <div style={{ background: '#fff', padding: '0.5rem', display: 'inline-block', borderRadius: '8px' }}>
+                <QRCodeSVG value={fiscalData.qr_url} size={140} />
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Escanea para verificar el comprobante
               </div>
             </div>
           )}
