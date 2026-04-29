@@ -40,11 +40,11 @@ class AfipService:
         try:
             # Factura B para consumidor final (CbteTipo = 6, DocTipo = 99 para Consumidor Final)
             # Para simplificar, asumimos Factura B a consumidor final sin documentar para montos menores.
-            # Según ARCA, Factura B = 6. 
+            # Para Monotributistas, Factura C = 11. 
             
             # Obtener el último número de comprobante
             pto_vta = settings.AFIP_PTO_VTA
-            last_voucher = self.afip.ElectronicBilling.getLastVoucher(pto_vta, 6) # Tipo 6 (Factura B)
+            last_voucher = self.afip.ElectronicBilling.getLastVoucher(pto_vta, 11) # Tipo 11 (Factura C)
             next_voucher = last_voucher + 1
 
             imp_neto = round(amount / 1.21, 2)
@@ -54,7 +54,7 @@ class AfipService:
             data = {
                 'CantReg': 1,  # Cantidad de comprobantes a registrar
                 'PtoVta': pto_vta,  # Punto de venta
-                'CbteTipo': 6,  # 6 = Factura B
+                'CbteTipo': 11,  # 11 = Factura C
                 'Concepto': 1,  # 1 = Productos, 2 = Servicios
                 'DocTipo': 99, # 99 = Consumidor Final
                 'DocNro': 0,
@@ -63,19 +63,12 @@ class AfipService:
                 'CbteFch': int(datetime.now().strftime('%Y%m%d')), 
                 'ImpTotal': float(amount), # Importe total
                 'ImpTotConc': 0, # Importe neto no gravado
-                'ImpNeto': float(imp_neto), # Importe neto gravado (asumiendo 21% IVA)
+                'ImpNeto': float(amount), # Importe neto gravado (Para Monotributo, ImpNeto = ImpTotal)
                 'ImpOpEx': 0, # Importe exento al IVA
-                'ImpIVA': float(imp_iva), # Importe IVA
+                'ImpIVA': 0, # Importe IVA
                 'ImpTrib': 0, # Importe otros tributos
                 'MonId': 'PES', # Moneda
                 'MonCotiz': 1, # Cotización moneda
-                'Iva': [
-                    {
-                        'Id': 5, # 5 = 21%
-                        'BaseImp': float(imp_neto),
-                        'Importe': float(imp_iva)
-                    }
-                ],
             }
 
             # Crear factura
