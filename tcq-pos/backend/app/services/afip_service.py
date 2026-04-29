@@ -45,6 +45,9 @@ class AfipService:
             last_voucher = self.afip.ElectronicBilling.getLastVoucher(1, 6) # Punto de venta 1, Tipo 6 (Factura B)
             next_voucher = last_voucher + 1
 
+            imp_neto = round(amount / 1.21, 2)
+            imp_iva = round(amount - imp_neto, 2)
+
             # Configurar datos de la factura
             data = {
                 'CantReg': 1,  # Cantidad de comprobantes a registrar
@@ -56,19 +59,19 @@ class AfipService:
                 'CbteDesde': next_voucher,
                 'CbteHasta': next_voucher,
                 'CbteFch': int(self.afip.ElectronicBilling.formatDate()), 
-                'ImpTotal': amount, # Importe total
+                'ImpTotal': float(amount), # Importe total
                 'ImpTotConc': 0, # Importe neto no gravado
-                'ImpNeto': round(amount / 1.21, 2), # Importe neto gravado (asumiendo 21% IVA)
+                'ImpNeto': float(imp_neto), # Importe neto gravado (asumiendo 21% IVA)
                 'ImpOpEx': 0, # Importe exento al IVA
-                'ImpIVA': amount - round(amount / 1.21, 2), # Importe IVA
+                'ImpIVA': float(imp_iva), # Importe IVA
                 'ImpTrib': 0, # Importe otros tributos
                 'MonId': 'PES', # Moneda
                 'MonCotiz': 1, # Cotización moneda
                 'Iva': [
                     {
                         'Id': 5, # 5 = 21%
-                        'BaseImp': round(amount / 1.21, 2),
-                        'Importe': amount - round(amount / 1.21, 2)
+                        'BaseImp': float(imp_neto),
+                        'Importe': float(imp_iva)
                     }
                 ],
             }
