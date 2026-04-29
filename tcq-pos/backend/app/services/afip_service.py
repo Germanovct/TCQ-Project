@@ -1,6 +1,7 @@
 from afip import Afip
 from app.config import get_settings
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -59,7 +60,7 @@ class AfipService:
                 'DocNro': 0,
                 'CbteDesde': next_voucher,
                 'CbteHasta': next_voucher,
-                'CbteFch': int(self.afip.ElectronicBilling.formatDate()), 
+                'CbteFch': int(datetime.now().strftime('%Y%m%d')), 
                 'ImpTotal': float(amount), # Importe total
                 'ImpTotConc': 0, # Importe neto no gravado
                 'ImpNeto': float(imp_neto), # Importe neto gravado (asumiendo 21% IVA)
