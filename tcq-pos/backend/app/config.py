@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     AFIP_CERT_PATH: str = "afip_cert.crt"
     AFIP_KEY_PATH: str = "afip_key.key"
     AFIP_PRODUCTION: bool = True
+    AFIP_PTO_VTA: int = 1
 
     # App Settings
     APP_NAME: str = "TCQ POS"

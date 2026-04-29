@@ -42,7 +42,8 @@ class AfipService:
             # Según ARCA, Factura B = 6. 
             
             # Obtener el último número de comprobante
-            last_voucher = self.afip.ElectronicBilling.getLastVoucher(1, 6) # Punto de venta 1, Tipo 6 (Factura B)
+            pto_vta = settings.AFIP_PTO_VTA
+            last_voucher = self.afip.ElectronicBilling.getLastVoucher(pto_vta, 6) # Tipo 6 (Factura B)
             next_voucher = last_voucher + 1
 
             imp_neto = round(amount / 1.21, 2)
@@ -51,7 +52,7 @@ class AfipService:
             # Configurar datos de la factura
             data = {
                 'CantReg': 1,  # Cantidad de comprobantes a registrar
-                'PtoVta': 1,  # Punto de venta
+                'PtoVta': pto_vta,  # Punto de venta
                 'CbteTipo': 6,  # 6 = Factura B
                 'Concepto': 1,  # 1 = Productos, 2 = Servicios
                 'DocTipo': 99, # 99 = Consumidor Final
@@ -84,7 +85,7 @@ class AfipService:
                 "cae": res['CAE'],
                 "vto_cae": res['CAEFchVto'],
                 "nro_comprobante": next_voucher,
-                "pto_vta": 1
+                "pto_vta": pto_vta
             }
 
         except Exception as e:
