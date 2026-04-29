@@ -356,7 +356,9 @@ export default function App() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
   // ── WebSocket for Real-time Payment Updates ──
-  const wsUrl = import.meta.env.VITE_WS_URL || `ws://${window.location.hostname}:8000/api/v1/dashboard/ws`;
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const defaultWsHost = window.location.hostname === 'localhost' ? 'localhost:8000' : 'tcq-project.onrender.com';
+  const wsUrl = import.meta.env.VITE_WS_URL || `${wsProtocol}//${defaultWsHost}/api/v1/dashboard/ws`;
   const { connected: wsConnected } = useWebSocket(wsUrl, (data) => {
     if (data.event === 'sale_completed') {
       if (qrModal && qrModal.transaction_id === data.transaction_id) {
