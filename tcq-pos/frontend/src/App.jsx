@@ -10,6 +10,7 @@ import LiveClock from './components/LiveClock';
 import DJPortal from './components/DJPortal';
 import { useWebSocket } from './hooks/useWebSocket';
 import { QRCodeSVG } from 'qrcode.react';
+import PublicTicket from './components/PublicTicket';
 import './index.css';
 
 /* ─── Toast System ─── */
@@ -307,6 +308,15 @@ function ReportModal({ data, onClose }) {
    MAIN APP
    ═══════════════════════════════════════════ */
 export default function App() {
+  const [publicTicketId, setPublicTicketId] = useState(() => {
+    const match = window.location.pathname.match(/^\/ticket\/([^\/]+)/);
+    return match ? match[1] : null;
+  });
+
+  if (publicTicketId) {
+    return <PublicTicket transactionId={publicTicketId} />;
+  }
+
   // Auth state
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);

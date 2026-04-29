@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 
 export default function TicketModal({ data, onClose }) {
@@ -11,25 +12,6 @@ export default function TicketModal({ data, onClose }) {
   const { items, total, method, table_ref, transaction_id, date } = data;
   const methodLabel = method === 'CASH' ? 'Efectivo' : method === 'TCQ_BALANCE' ? 'Saldo TCQ' : 'Mercado Pago';
   const now = date || new Date().toLocaleString('es-AR');
-
-  const handleShare = async () => {
-    const text = `🧾 TCQ Club - Ticket\n` +
-      `Fecha: ${now}\n` +
-      `Mesa: ${table_ref || '-'}\n` +
-      `──────────\n` +
-      items.map(i => `${i.quantity}x ${i.product_name} $${i.subtotal.toLocaleString('es-AR')}`).join('\n') +
-      `\n──────────\n` +
-      `TOTAL: $${total.toLocaleString('es-AR')}\n` +
-      `Método: ${methodLabel}\n` +
-      `ID: ${transaction_id?.slice(0, 8)}`;
-
-    if (navigator.share) {
-      try { await navigator.share({ title: 'Ticket TCQ', text }); } catch {}
-    } else {
-      await navigator.clipboard.writeText(text);
-      alert('Ticket copiado al portapapeles');
-    }
-  };
   const handleGenerateAFIP = async () => {
     if (!transaction_id) return;
     setLoadingAFIP(true);
@@ -75,12 +57,20 @@ export default function TicketModal({ data, onClose }) {
               <div>Vto CAE: {fiscalData.vto_cae}</div>
             </div>
           )}
+
+          {transaction_id && (
+            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                Escanea para ver tu ticket digital
+              </div>
+              <div style={{ background: '#fff', padding: '0.5rem', display: 'inline-block', borderRadius: '8px' }}>
+                <QRCodeSVG value={`https://tcq-pos.netlify.app/ticket/${transaction_id}`} size={140} />
+              </div>
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-          <button className="btn btn-primary" onClick={handleShare} style={{ flex: 1, justifyContent: 'center' }}>
-            📤 Compartir Ticket
-          </button>
-          <button className="btn btn-ghost" onClick={onClose} style={{ justifyContent: 'center' }}>Cerrar</button>
+          <button className="btn btn-ghost" onClick={onClose} style={{ flex: 1, justifyContent: 'center' }}>Cerrar</button>
         </div>
         {!fiscalData && (
           <button 

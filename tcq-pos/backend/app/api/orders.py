@@ -82,3 +82,32 @@ async def generate_fiscal_ticket(transaction_id: UUID, db: AsyncSession = Depend
         "vto_cae": txn.afip_vto_cae,
         "nro_comprobante": txn.afip_voucher_num
     }
+
+@router.get("/{transaction_id}/receipt")
+async def get_public_receipt(transaction_id: UUID, db: AsyncSession = Depends(get_db)):
+    """Public endpoint to view a digital ticket/receipt"""
+    result = await db.execute(
+        select(Transaction)
+        .where(Transaction.id == transaction_id)
+    )
+    txn = result.scalar_one_or_none()
+    if not txn:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+
+    items = []
+    if txn.items_snapshot:
+        items = txn.items_snapshot
+    
+    return {
+        "id": str(txn.id),
+        "method": txn.method,
+        "status": txn.status,
+        "total": float(txn.total_amount),
+        "date": txn.created_at.isoformat(),
+        "items": items,
+        "afip": {
+            "cae": txn.afip_cae,
+            "vto_cae": txn.afip_vto_cae,
+            "nro_comprobante": txn.afip_voucher_num
+        } if txn.afip_cae else None
+    }

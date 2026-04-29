@@ -65,7 +65,15 @@ class ApiService {
 
   // Orders
   createOrder(data) { return this.request('POST', '/orders/create-order', data); }
-  generateFiscalTicket(transactionId) { return this.request('POST', `/orders/${transactionId}/fiscal-ticket`); }
+  async generateFiscalTicket(transactionId) {
+    return this.request('POST', `/orders/${transactionId}/fiscal-ticket`);
+  }
+
+  async getReceipt(transactionId) {
+    const res = await fetch(`${this.baseURL}/orders/${transactionId}/receipt`);
+    if (!res.ok) throw new Error('Receipt not found');
+    return res.json();
+  }
   getTerminalOrders(terminalId) { return this.request('GET', `/orders/terminal/${terminalId}`); }
 
   // Dashboard
