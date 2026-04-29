@@ -15,6 +15,7 @@ from app.models.transaction import Transaction, TransactionItem
 from app.services.wallet_service import WalletService, InsufficientBalanceError
 from app.services.mercadopago_service import mp_service
 from app.schemas.order import CreateOrderRequest, OrderItemDetail
+from app.api.dashboard import broadcast_event
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +94,7 @@ class PaymentService:
 
         # 4. Process by method
         if order.method == "TCQ_BALANCE":
-            return await PaymentService._process_tcq_balance(db, txn, order, items_detail, total)
+            return await PaymentService._process_tcq_balance(db, txn, order, items_detail, total, terminal)
         elif order.method == "MERCADO_PAGO":
             return await PaymentService._process_mercado_pago(db, txn, items_detail, total, terminal)
         elif order.method == "CASH":
@@ -102,12 +103,22 @@ class PaymentService:
             return {"success": False, "error": f"Unknown payment method: {order.method}"}
 
     @staticmethod
-    async def _process_tcq_balance(db, txn, order, items_detail, total):
+    async def _process_tcq_balance(db, txn, order, items_detail, total, terminal):
         if not order.user_id:
             return {"success": False, "error": "user_id required for TCQ_BALANCE"}
         try:
             new_balance = await WalletService.debit(db, order.user_id, total)
             await PaymentService._complete_sale(db, txn, items_detail)
+            terminal.daily_total = Decimal(str(terminal.daily_total or 0)) + total
+            # Broadcast sale to admin dashboard
+            await broadcast_event({
+                "event": "sale_completed",
+                "transaction_id": str(txn.id),
+                "terminal_id": terminal.id,
+                "total_amount": float(total),
+                "method": "TCQ_BALANCE",
+                "message": f"✅ Pago TCQ Balance: ${total}",
+            })
             return {
                 "success": True,
                 "transaction_id": str(txn.id),
@@ -146,6 +157,15 @@ class PaymentService:
     async def _process_cash(db, txn, items_detail, total, terminal):
         await PaymentService._complete_sale(db, txn, items_detail)
         terminal.daily_total = Decimal(str(terminal.daily_total or 0)) + total
+        # Broadcast sale to admin dashboard
+        await broadcast_event({
+            "event": "sale_completed",
+            "transaction_id": str(txn.id),
+            "terminal_id": terminal.id,
+            "total_amount": float(total),
+            "method": "CASH",
+            "message": f"✅ Venta efectivo: ${total}",
+        })
         return {
             "success": True,
             "transaction_id": str(txn.id),

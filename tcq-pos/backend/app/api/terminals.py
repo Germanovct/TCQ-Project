@@ -288,12 +288,30 @@ async def get_all_live_registers(
     result = await db.execute(select(Terminal).order_by(Terminal.id))
     registers = []
     for t in result.scalars().all():
+        # Calculate live total from actual completed transactions for the active shift
+        live_total = float(t.daily_total or 0)
+        txn_count = 0
+        if t.is_open and t.active_shift_id:
+            total_result = await db.execute(
+                select(
+                    func.coalesce(func.sum(Transaction.total_amount), 0),
+                    func.count(Transaction.id),
+                ).where(
+                    Transaction.shift_id == t.active_shift_id,
+                    Transaction.status == "COMPLETED",
+                )
+            )
+            row = total_result.one()
+            live_total = float(row[0])
+            txn_count = int(row[1])
+
         reg = {
             "id": t.id,
             "name": t.name,
             "location": t.location,
             "is_open": t.is_open,
-            "daily_total": float(t.daily_total or 0),
+            "daily_total": live_total,
+            "transaction_count": txn_count,
             "initial_balance": float(t.initial_balance or 0),
             "opened_at": t.opened_at.isoformat() if t.opened_at else None,
             "operator_name": None,

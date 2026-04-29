@@ -382,6 +382,10 @@ export default function App() {
         toast(data.message || `Nuevo pago ingresado: $${data.total_amount}`, 'success');
         setDailyTotal(prev => prev + data.total_amount);
       }
+      // Auto-refresh live registers if the modal is open
+      if (showLiveRegisters) {
+        api.getAllLiveRegisters().then(setLiveRegisters).catch(() => {});
+      }
     }
   });
 
@@ -635,6 +639,18 @@ export default function App() {
     } catch (e) { toast('Error cargando cajas', 'error'); }
   };
 
+  // Auto-refresh live registers every 10 seconds while the modal is open
+  useEffect(() => {
+    if (!showLiveRegisters) return;
+    const interval = setInterval(async () => {
+      try {
+        const data = await api.getAllLiveRegisters();
+        setLiveRegisters(data);
+      } catch (e) { /* silent */ }
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [showLiveRegisters]);
+
   // Close mobile cart after checkout
   const handleCheckoutMobile = async () => {
     await handleCheckout();
@@ -722,7 +738,10 @@ export default function App() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">📦 Cajas en Vivo</h2>
-              <button className="btn btn-ghost btn-icon" onClick={() => setShowLiveRegisters(false)}>✕</button>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button className="btn btn-ghost btn-icon" onClick={handleShowLiveRegisters} title="Refrescar">🔄</button>
+                <button className="btn btn-ghost btn-icon" onClick={() => setShowLiveRegisters(false)}>✕</button>
+              </div>
             </div>
             <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Total Facturado (todas las cajas)</div>
@@ -742,6 +761,11 @@ export default function App() {
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                     {r.is_open ? `🟢 ${r.operator_name || 'Operador'} · ${r.shift_label || 'Turno'}` : '🔴 Cerrada'}
                   </div>
+                  {r.is_open && r.transaction_count > 0 && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--brand-accent)', marginTop: '2px' }}>
+                      {r.transaction_count} ventas
+                    </div>
+                  )}
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontWeight: 800, color: r.is_open ? 'var(--success)' : 'var(--text-muted)' }}>
