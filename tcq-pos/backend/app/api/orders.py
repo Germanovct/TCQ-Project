@@ -50,3 +50,35 @@ async def get_terminal_orders(terminal_id: int, db: AsyncSession = Depends(get_d
         .limit(100)
     )
     return result.scalars().all()
+
+
+@router.post("/{transaction_id}/fiscal-ticket")
+async def generate_fiscal_ticket(transaction_id: UUID, db: AsyncSession = Depends(get_db)):
+    """Generate a fiscal ticket (Factura) via ARCA/AFIP for an existing transaction."""
+    txn = await db.get(Transaction, transaction_id)
+    if not txn:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
+    if txn.afip_cae:
+        return {
+            "cae": txn.afip_cae,
+            "vto_cae": txn.afip_vto_cae,
+            "nro_comprobante": txn.afip_voucher_num
+        }
+
+    from app.services.afip_service import afip_service
+    res = await afip_service.generate_ticket(float(txn.total_amount), txn.method, str(txn.id))
+    
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error", "Error generando ticket AFIP"))
+
+    txn.afip_cae = res["cae"]
+    txn.afip_vto_cae = res["vto_cae"]
+    txn.afip_voucher_num = res["nro_comprobante"]
+    await db.commit()
+
+    return {
+        "cae": txn.afip_cae,
+        "vto_cae": txn.afip_vto_cae,
+        "nro_comprobante": txn.afip_voucher_num
+    }

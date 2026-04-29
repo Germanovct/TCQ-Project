@@ -4,6 +4,10 @@ import LoginScreen from './components/LoginScreen';
 import TeamManager from './components/TeamManager';
 import ProductManager from './components/ProductManager';
 import TopUpModal from './components/TopUpModal';
+import PinModal from './components/PinModal';
+import TicketModal from './components/TicketModal';
+import LiveClock from './components/LiveClock';
+import DJPortal from './components/DJPortal';
 import { useWebSocket } from './hooks/useWebSocket';
 import { QRCodeSVG } from 'qrcode.react';
 import './index.css';
@@ -20,7 +24,7 @@ function Toasts({ toasts }) {
 }
 
 /* ─── Top Bar ─── */
-function TopBar({ terminal, dailyTotal, onOpenRegister, onCloseRegister, onShowReport, user, onShowTeam, onShowProducts, onShowTopUp, onLogout }) {
+function TopBar({ terminal, dailyTotal, onOpenRegister, onCloseRegister, onShowReport, user, onShowTeam, onShowProducts, onShowTopUp, onLogout, wsConnected, onShowLiveRegisters, onShowDJ }) {
   const isOpen = terminal?.is_open;
   return (
     <div className="topbar">
@@ -31,17 +35,16 @@ function TopBar({ terminal, dailyTotal, onOpenRegister, onCloseRegister, onShowR
           <span style={{ color: isOpen ? 'var(--success)' : 'var(--danger)' }}>
             {isOpen ? `${terminal.name} · Abierta` : 'Caja Cerrada'}
           </span>
+          <span className={`ws-indicator ${wsConnected ? 'online' : 'offline'}`} title={wsConnected ? 'Conectado' : 'Desconectado'} />
         </div>
       </div>
+
+      <LiveClock />
       
-      {user?.role === 'admin' ? (
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>Balance Caja</div>
-          <div className="topbar-balance">${(dailyTotal || 0).toLocaleString('es-AR', { minimumFractionDigits: 0 })}</div>
-        </div>
-      ) : (
-        <div style={{ flex: 1 }}></div>
-      )}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>Facturación</div>
+        <div className="topbar-balance">${(dailyTotal || 0).toLocaleString('es-AR', { minimumFractionDigits: 0 })}</div>
+      </div>
 
       <div style={{ textAlign: 'right' }}>
         <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--brand-primary-light)' }}>🍺 {user?.full_name}</div>
@@ -49,7 +52,7 @@ function TopBar({ terminal, dailyTotal, onOpenRegister, onCloseRegister, onShowR
       </div>
       <div className="topbar-actions">
         {isOpen && (
-          <button className="btn btn-success" onClick={onShowTopUp} style={{ marginRight: '1rem', padding: '0.4rem 1rem' }}>
+          <button className="btn btn-success" onClick={onShowTopUp} style={{ padding: '0.4rem 1rem' }}>
             💳 Cargar Saldo
           </button>
         )}
@@ -57,9 +60,11 @@ function TopBar({ terminal, dailyTotal, onOpenRegister, onCloseRegister, onShowR
           <>
             <button className="btn btn-ghost" onClick={onShowProducts}>🍔 Carta</button>
             <button className="btn btn-ghost" onClick={onShowTeam}>👥 Equipo</button>
+            <button className="btn btn-ghost" onClick={onShowLiveRegisters}>📦 Cajas</button>
           </>
         )}
         <button className="btn btn-ghost" onClick={onShowReport}>📊 Reporte</button>
+        <button className="btn btn-ghost" onClick={onShowDJ}>🎧 DJ</button>
         {!isOpen ? (
           <button className="btn btn-success" onClick={onOpenRegister}>Abrir Caja</button>
         ) : (
@@ -278,6 +283,21 @@ function ReportModal({ data, onClose }) {
             ))}
           </>
         )}
+        {data.register_breakdown && data.register_breakdown.length > 0 && (
+          <>
+            <h3 style={{ margin: 'var(--space-lg) 0 var(--space-md)', color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 700 }}>📦 Por Caja</h3>
+            {data.register_breakdown.map(r => (
+              <div key={r.terminal_id} style={{
+                display: 'flex', justifyContent: 'space-between', padding: 'var(--space-sm) var(--space-md)',
+                background: 'var(--bg-elevated)', borderRadius: 'var(--radius-sm)', marginBottom: 'var(--space-xs)',
+                border: '1px solid var(--border-subtle)',
+              }}>
+                <span style={{ fontWeight: 600 }}>{r.terminal_name} <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({r.transaction_count} ventas)</span></span>
+                <span style={{ color: 'var(--success)', fontWeight: 700 }}>${r.total?.toLocaleString('es-AR')}</span>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
@@ -308,8 +328,16 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState('tables');
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
-  const [qrModal, setQrModal] = useState(null); // { url, amount, transaction_id }
+  const [qrModal, setQrModal] = useState(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [pinModal, setPinModal] = useState(null); // { itemId, itemName, callback }
+  const [ticketModal, setTicketModal] = useState(null); // ticket data after sale
+  const [showLiveRegisters, setShowLiveRegisters] = useState(false);
+  const [liveRegisters, setLiveRegisters] = useState(null);
+  const [committedItems, setCommittedItems] = useState({}); // { tableId: Set of productIds committed }
+  const [staleShiftWarning, setStaleShiftWarning] = useState(null);
+  const [showDJ, setShowDJ] = useState(false);
+  const [shiftClosedData, setShiftClosedData] = useState(null);
 
   // PWA Install Modal (show once per device)
   useEffect(() => {
@@ -329,19 +357,16 @@ export default function App() {
 
   // ── WebSocket for Real-time Payment Updates ──
   const wsUrl = import.meta.env.VITE_WS_URL || `ws://${window.location.hostname}:8000/api/v1/dashboard/ws`;
-  useWebSocket(wsUrl, (data) => {
+  const { connected: wsConnected } = useWebSocket(wsUrl, (data) => {
     if (data.event === 'sale_completed') {
-      // If we have an open QR for this exact transaction, close it and celebrate
       if (qrModal && qrModal.transaction_id === data.transaction_id) {
         toast(data.message || '✅ ¡Pago de Mercado Pago confirmado!', 'success');
         setQrModal(null);
         setDailyTotal(prev => prev + data.total_amount);
-        // Clear table after MP completion
         setTables(prev => { const next = { ...prev }; delete next[activeTable]; return next; });
         setActiveTable(null);
         setView('tables');
       } else {
-        // If it was from another tablet, just show a passive toast
         toast(data.message || `Nuevo pago ingresado: $${data.total_amount}`, 'success');
         setDailyTotal(prev => prev + data.total_amount);
       }
@@ -413,13 +438,31 @@ export default function App() {
     if (terminal?.is_open) { toast('La caja ya está abierta', 'info'); return; }
     const balance = prompt('💰 Saldo inicial (efectivo en caja):', '0');
     if (balance === null) return;
+    const hour = new Date().getHours();
+    const autoShift = hour < 12 ? 'Mañana' : hour < 20 ? 'Tarde' : 'Noche';
+    const shiftLabel = prompt('🕐 Turno:', autoShift);
+    if (shiftLabel === null) return;
     try {
-      await api.openTerminal(terminal.id, parseFloat(balance) || 0);
+      const result = await api.openTerminal(terminal.id, parseFloat(balance) || 0, shiftLabel || autoShift);
+      if (result.error === 'STALE_SHIFT') {
+        setStaleShiftWarning(result);
+        return;
+      }
       setTerminal(prev => ({ ...prev, is_open: true, initial_balance: parseFloat(balance) || 0 }));
       setDailyTotal(0);
       setTables({});
-      toast(`Caja abierta · Saldo: $${parseFloat(balance || 0).toLocaleString('es-AR')}`);
+      setCommittedItems({});
+      toast(`Caja abierta · ${shiftLabel || autoShift} · $${parseFloat(balance || 0).toLocaleString('es-AR')}`);
     } catch (e) { toast(e.detail || 'Error abriendo caja', 'error'); }
+  };
+
+  const handleForceCloseStale = async () => {
+    try {
+      await api.forceCloseTerminal(terminal.id);
+      setStaleShiftWarning(null);
+      setTerminal(prev => ({ ...prev, is_open: false }));
+      toast('Caja del día anterior cerrada. Ahora podés abrir una nueva.');
+    } catch (e) { toast('Error cerrando caja', 'error'); }
   };
 
   const handleCloseRegister = async () => {
@@ -429,9 +472,10 @@ export default function App() {
       const result = await api.closeTerminal(terminal.id);
       setTerminal(prev => ({ ...prev, is_open: false }));
       setTables({});
+      setCommittedItems({});
       setActiveTable(null);
       setView('tables');
-      toast(`Caja cerrada · Total: $${result.total_final?.toLocaleString('es-AR')}`);
+      setShiftClosedData(result);
     } catch (e) { toast(e.detail || 'Error cerrando caja', 'error'); }
   };
 
@@ -469,6 +513,26 @@ export default function App() {
 
   const removeFromCart = (productId) => {
     if (!activeTable) return;
+    const cart = tables[activeTable] || [];
+    const item = cart.find(i => i.id === productId);
+
+    if (item) {
+      setPinModal({
+        itemId: productId,
+        itemName: item.name,
+        itemPrice: item.price,
+        callback: () => {
+          doRemoveFromCart(productId);
+          setPinModal(null);
+        }
+      });
+      return;
+    }
+    doRemoveFromCart(productId);
+  };
+
+  const doRemoveFromCart = (productId) => {
+    if (!activeTable) return;
     setTables(prev => {
       const cart = [...(prev[activeTable] || [])];
       const idx = cart.findIndex(i => i.id === productId);
@@ -495,29 +559,41 @@ export default function App() {
         method: paymentMethod,
         terminal_id: terminal.id,
         table_ref: String(activeTable),
+        operator_id: user?.id || null,
       };
       const result = await api.createOrder(orderData);
 
-      // If MP, we get a QR preference
+      // Build ticket data from items
+      const ticketItems = currentCart.map(i => ({
+        product_name: i.name, quantity: i.qty, unit_price: i.price, subtotal: i.price * i.qty
+      }));
+
       if (result.method === 'MERCADO_PAGO' && result.qr_data) {
-        setQrModal({
-          url: result.qr_data,
-          amount: result.total_amount,
-          transaction_id: result.transaction_id,
+        setQrModal({ url: result.qr_data, amount: result.total_amount, transaction_id: result.transaction_id });
+        // Mark items as committed since order was placed
+        setCommittedItems(prev => {
+          const set = new Set(prev[activeTable] || []);
+          currentCart.forEach(i => set.add(i.id));
+          return { ...prev, [activeTable]: set };
         });
         toast('📱 QR de Mercado Pago generado', 'success');
       } else {
-        // For CASH or TCQ_BALANCE, it completes instantly
         toast(result.message || '✅ Venta completada');
         setDailyTotal(prev => prev + result.total_amount);
-        
-        // Clear table immediately
+        // Show ticket modal
+        setTicketModal({
+          items: ticketItems, total: result.total_amount, method: result.method,
+          table_ref: activeTable, transaction_id: result.transaction_id,
+          date: new Date().toLocaleString('es-AR'),
+        });
+        // Clear table
         setTables(prev => { const next = { ...prev }; delete next[activeTable]; return next; });
+        setCommittedItems(prev => { const next = { ...prev }; delete next[activeTable]; return next; });
         setActiveTable(null);
         setView('tables');
       }
 
-      // Update product stock locally for all cases
+      // Update product stock locally
       setProducts(prev => prev.map(p => {
         const cartItem = currentCart.find(c => c.id === p.id);
         return cartItem ? { ...p, stock: p.stock - cartItem.qty } : p;
@@ -536,6 +612,15 @@ export default function App() {
       setReportData(data);
       setShowReport(true);
     } catch (e) { toast('Error cargando reporte', 'error'); }
+  };
+
+  // ── Live Registers (Admin) ──
+  const handleShowLiveRegisters = async () => {
+    try {
+      const data = await api.getAllLiveRegisters();
+      setLiveRegisters(data);
+      setShowLiveRegisters(true);
+    } catch (e) { toast('Error cargando cajas', 'error'); }
   };
 
   // Close mobile cart after checkout
@@ -597,6 +682,65 @@ export default function App() {
       {showTeam && <TeamManager onClose={() => setShowTeam(false)} toast={toast} />}
       {showProducts && <ProductManager onClose={() => setShowProducts(false)} toast={toast} onProductsChanged={fetchProducts} />}
       {showTopUp && <TopUpModal onClose={() => setShowTopUp(false)} toast={toast} />}
+      {pinModal && <PinModal itemName={pinModal.itemName} itemPrice={pinModal.itemPrice} terminalId={terminal?.id} operatorId={user?.id} onSuccess={pinModal.callback} onCancel={() => setPinModal(null)} />}
+      {ticketModal && <TicketModal data={ticketModal} onClose={() => setTicketModal(null)} />}
+      {showDJ && <DJPortal onClose={() => setShowDJ(false)} toast={toast} />}
+
+      {/* Stale Shift Warning */}
+      {staleShiftWarning && (
+        <div className="modal-overlay" style={{ zIndex: 1800 }}>
+          <div className="modal" style={{ maxWidth: '420px', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>⚠️</div>
+            <h2 className="modal-title" style={{ color: 'var(--warning)' }}>Caja sin cerrar</h2>
+            <p style={{ color: 'var(--text-muted)', margin: '1rem 0' }}>
+              La caja quedó abierta del día <strong style={{ color: 'var(--text-primary)' }}>{staleShiftWarning.stale_date}</strong>. 
+              Tenés que cerrarla antes de abrir una nueva.
+            </p>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button className="btn btn-ghost" onClick={() => setStaleShiftWarning(null)} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
+              <button className="btn btn-danger" onClick={handleForceCloseStale} style={{ flex: 1, justifyContent: 'center' }}>Cerrar Caja Anterior</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Live Registers Modal (Admin) */}
+      {showLiveRegisters && liveRegisters && (
+        <div className="modal-overlay" onClick={() => setShowLiveRegisters(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">📦 Cajas en Vivo</h2>
+              <button className="btn btn-ghost btn-icon" onClick={() => setShowLiveRegisters(false)}>✕</button>
+            </div>
+            <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Total Facturado (todas las cajas)</div>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--brand-accent)' }}>
+                ${liveRegisters.grand_total?.toLocaleString('es-AR')}
+              </div>
+            </div>
+            {liveRegisters.registers?.map(r => (
+              <div key={r.id} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: 'var(--space-md)', background: 'var(--bg-elevated)',
+                borderRadius: 'var(--radius-md)', border: `1px solid ${r.is_open ? 'rgba(6,214,160,0.3)' : 'var(--border-subtle)'}`,
+                marginBottom: 'var(--space-sm)',
+              }}>
+                <div>
+                  <div style={{ fontWeight: 700 }}>{r.name}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    {r.is_open ? `🟢 ${r.operator_name || 'Operador'} · ${r.shift_label || 'Turno'}` : '🔴 Cerrada'}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 800, color: r.is_open ? 'var(--success)' : 'var(--text-muted)' }}>
+                    ${r.daily_total?.toLocaleString('es-AR')}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* PWA Install Modal */}
       {showInstallModal && (
@@ -627,6 +771,41 @@ export default function App() {
             )}
             <button className="btn btn-success" style={{ width: '100%', justifyContent: 'center' }} onClick={dismissInstallModal}>
               ¡Entendido!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Shift Closed Modal */}
+      {shiftClosedData && (
+        <div className="modal-overlay" style={{ zIndex: 2000 }}>
+          <div className="modal" style={{ maxWidth: '400px', textAlign: 'center' }}>
+            <h2 className="modal-title" style={{ color: 'var(--brand-primary-light)' }}>Caja Cerrada</h2>
+            
+            <div style={{ margin: '1rem 0', padding: '1rem', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)' }}>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Total Final</p>
+              <h3 style={{ fontSize: '2rem', color: 'var(--success)', margin: '0.5rem 0' }}>
+                ${shiftClosedData.total_final?.toLocaleString('es-AR')}
+              </h3>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Operador: {shiftClosedData.closed_by}</p>
+            </div>
+
+            {shiftClosedData.voided_items && shiftClosedData.voided_items.length > 0 && (
+              <div style={{ textAlign: 'left', marginTop: '1rem' }}>
+                <h4 style={{ color: 'var(--danger)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>⚠️ Productos Eliminados</h4>
+                <div style={{ maxHeight: '150px', overflowY: 'auto', background: 'var(--danger-bg)', borderRadius: 'var(--radius-sm)', padding: '0.5rem' }}>
+                  {shiftClosedData.voided_items.map((vi, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(239,68,68,0.2)', padding: '0.25rem 0', fontSize: '0.8rem' }}>
+                      <span style={{ color: '#fca5a5' }}>{vi.name}</span>
+                      <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>-${vi.price}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem', justifyContent: 'center' }} onClick={() => setShiftClosedData(null)}>
+              Cerrar
             </button>
           </div>
         </div>
@@ -676,6 +855,9 @@ export default function App() {
             onShowProducts={() => setShowProducts(true)}
             onShowTopUp={() => setShowTopUp(true)}
             onLogout={handleLogout}
+            wsConnected={wsConnected}
+            onShowLiveRegisters={handleShowLiveRegisters}
+            onShowDJ={() => setShowDJ(true)}
           />
 
           {view === 'tables' ? (

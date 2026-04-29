@@ -43,6 +43,9 @@ class Terminal(Base):
         nullable=True,
     )
 
+    # Current active shift
+    active_shift_id = Column(Integer, nullable=True)
+
     # Shift timestamps
     opened_at = Column(DateTime(timezone=True), nullable=True)
     closed_at = Column(DateTime(timezone=True), nullable=True)
@@ -57,6 +60,7 @@ class Terminal(Base):
     # Relationships
     operator = relationship("User", foreign_keys=[operator_id])
     transactions = relationship("Transaction", back_populates="terminal", lazy="selectin")
+    shifts = relationship("CashRegisterShift", back_populates="terminal", lazy="selectin")
 
     def __repr__(self):
         status = "OPEN" if self.is_open else "CLOSED"

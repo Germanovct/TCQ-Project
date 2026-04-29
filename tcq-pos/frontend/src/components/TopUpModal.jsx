@@ -23,7 +23,7 @@ export default function TopUpModal({ onClose, toast }) {
   const fetchUser = async (code) => {
     setLoading(true);
     try {
-      const res = await api.scanUserQR(code);
+      const res = await api.scanQR(code);
       setUser(res.user);
       setStep('topup');
     } catch (err) {
@@ -68,8 +68,8 @@ export default function TopUpModal({ onClose, toast }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 className="modal-title" style={{ margin: 0 }}>Cargar Saldo a Cliente</h2>
+        <div className="modal-header">
+          <h2 className="modal-title">💳 Cargar Saldo</h2>
           <button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
         </div>
 
@@ -79,7 +79,7 @@ export default function TopUpModal({ onClose, toast }) {
               type="button" 
               className="btn btn-primary" 
               onClick={() => setStep('camera')}
-              style={{ fontSize: '1.1rem', padding: '1rem' }}
+              style={{ fontSize: '1.1rem', padding: '1rem', justifyContent: 'center' }}
             >
               📷 Escanear Código QR
             </button>
@@ -87,14 +87,14 @@ export default function TopUpModal({ onClose, toast }) {
             <input
               ref={qrInputRef}
               type="text"
-              className="form-input"
+              className="login-input"
               placeholder="Código QR..."
               value={qrCode}
               onChange={e => setQrCode(e.target.value)}
               disabled={loading}
             />
-            <button type="submit" className="btn btn-ghost" disabled={loading || !qrCode.trim()}>
-              {loading ? 'Buscando...' : 'Buscar Manualmente'}
+            <button type="submit" className="btn btn-ghost" style={{ justifyContent: 'center' }} disabled={loading || !qrCode.trim()}>
+              {loading ? '⏳ Buscando...' : '🔍 Buscar Manualmente'}
             </button>
           </form>
         ) : step === 'camera' ? (
@@ -105,25 +105,25 @@ export default function TopUpModal({ onClose, toast }) {
                 components={{ audio: false, finder: true }}
               />
             </div>
-            <button className="btn btn-danger" onClick={() => setStep('scan')}>
+            <button className="btn btn-danger" style={{ justifyContent: 'center' }} onClick={() => setStep('scan')}>
               Cancelar Cámara
             </button>
           </div>
         ) : (
           <form onSubmit={handleTopUp} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ background: 'var(--bg-elevated)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Cliente Encontrado</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{user.full_name}</div>
-              <div style={{ fontSize: '0.9rem', color: 'var(--brand-primary-light)' }}>
+            <div style={{ background: 'var(--bg-elevated)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Cliente Encontrado</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>{user.full_name}</div>
+              <div style={{ fontSize: '0.95rem', color: 'var(--brand-accent)', fontWeight: 600, marginTop: '4px' }}>
                 Saldo actual: ${user.tcq_balance.toLocaleString('es-AR')}
               </div>
             </div>
 
-            <div className="form-group">
-              <label>Monto a cargar ($)</label>
+            <div>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>Monto a cargar ($)</label>
               <input
                 type="number"
-                className="form-input"
+                className="login-input"
                 placeholder="Ej. 5000"
                 value={amount}
                 onChange={e => setAmount(e.target.value)}
@@ -134,20 +134,20 @@ export default function TopUpModal({ onClose, toast }) {
               />
             </div>
 
-            <div className="form-group">
-              <label>Método de Pago</label>
-              <select className="form-input" value={method} onChange={e => setMethod(e.target.value)} disabled={loading}>
-                <option value="CASH">Efectivo</option>
-                <option value="TRANSFER">Transferencia / Mercado Pago</option>
+            <div>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>Método de Pago</label>
+              <select className="login-input" value={method} onChange={e => setMethod(e.target.value)} disabled={loading}>
+                <option value="CASH">💵 Efectivo</option>
+                <option value="TRANSFER">📲 Transferencia / Mercado Pago</option>
               </select>
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-              <button type="button" className="btn btn-ghost" onClick={() => { setStep('scan'); setQrCode(''); setUser(null); }} style={{ flex: 1 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => { setStep('scan'); setQrCode(''); setUser(null); }} style={{ flex: 1, justifyContent: 'center' }}>
                 ← Atrás
               </button>
-              <button type="submit" className="btn btn-success" disabled={loading || !amount} style={{ flex: 2 }}>
-                {loading ? 'Cargando...' : 'Confirmar Carga'}
+              <button type="submit" className="btn btn-success" disabled={loading || !amount} style={{ flex: 2, justifyContent: 'center' }}>
+                {loading ? '⏳ Cargando...' : '✅ Confirmar Carga'}
               </button>
             </div>
           </form>

@@ -1,7 +1,6 @@
 /**
  * TCQ POS — API Service
  * Centralized HTTP client for backend communication.
- * Auto-detects backend URL based on current hostname.
  */
 
 class ApiService {
@@ -51,21 +50,42 @@ class ApiService {
 
   // Terminals
   getTerminals() { return this.request('GET', '/terminals/'); }
-  openTerminal(id, initialBalance) { return this.request('POST', `/terminals/${id}/open`, { initial_balance: initialBalance }); }
+  openTerminal(id, initialBalance, shiftLabel = 'General') {
+    return this.request('POST', `/terminals/${id}/open`, { initial_balance: initialBalance, shift_label: shiftLabel });
+  }
   closeTerminal(id) { return this.request('POST', `/terminals/${id}/close`); }
+  forceCloseTerminal(id) { return this.request('POST', `/terminals/${id}/force-close`); }
+  getTerminalShifts(id) { return this.request('GET', `/terminals/${id}/shifts`); }
+  getAllLiveRegisters() { return this.request('GET', '/terminals/all-live'); }
+  verifyPin(pin, terminalId = null, itemName = null, itemPrice = null, operatorId = null) { 
+    return this.request('POST', '/terminals/verify-pin', { 
+      pin, terminal_id: terminalId, item_name: itemName, item_price: itemPrice, operator_id: operatorId 
+    }); 
+  }
 
   // Orders
   createOrder(data) { return this.request('POST', '/orders/create-order', data); }
+  generateFiscalTicket(transactionId) { return this.request('POST', `/orders/${transactionId}/fiscal-ticket`); }
   getTerminalOrders(terminalId) { return this.request('GET', `/orders/terminal/${terminalId}`); }
 
   // Dashboard
   getDailySummary() { return this.request('GET', '/dashboard/summary'); }
+  getShiftReport(shiftId) { return this.request('GET', `/dashboard/shift-report/${shiftId}`); }
 
   // Barman Management
   createBarman(data) { return this.request('POST', '/auth/create-barman', data); }
   listBarmen() { return this.request('GET', '/auth/barmen'); }
   updateBarman(userId, data) { return this.request('PUT', `/auth/barmen/${userId}`, data); }
   deleteBarman(userId) { return this.request('DELETE', `/auth/barmen/${userId}`); }
+  // DJ Events
+  djRegister(data) { return this.request('POST', '/dj/register', data); }
+  djScanQR(qrCode) { return this.request('GET', `/dj/scan/${qrCode}`); }
+  djRedeemDrink(qrCode, drinkType, servedBy = null) { return this.request('POST', `/dj/redeem/${qrCode}`, { drink_type: drinkType, served_by: servedBy }); }
+  djListRegistrations(eventDate = null) { 
+    const q = eventDate ? `?event_date=${eventDate}` : '';
+    return this.request('GET', `/dj/registrations${q}`); 
+  }
+  djDeactivate(id) { return this.request('DELETE', `/dj/${id}`); }
 }
 
 export const api = new ApiService();

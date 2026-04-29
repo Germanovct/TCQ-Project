@@ -20,7 +20,9 @@ class Transaction(Base):
     
     Every order creates one transaction. The transaction records:
     - WHO paid (user_id) — nullable for cash/anonymous sales
+    - WHO processed it (operator_id) — the barman who made the sale
     - WHERE it was processed (terminal_id)
+    - WHICH shift it belongs to (shift_id)
     - HOW they paid (method: TCQ_BALANCE | MERCADO_PAGO | CASH)
     - STATUS lifecycle (PENDING → COMPLETED | FAILED | REFUNDED)
     - Mercado Pago integration fields (preference_id, payment_id)
@@ -43,11 +45,27 @@ class Transaction(Base):
         index=True,
     )
 
+    # Who processed the sale (barman)
+    operator_id = Column(
+        GUID(),
+        ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+    )
+
     # Which terminal processed the sale
     terminal_id = Column(
         Integer,
         ForeignKey("terminals.id"),
         nullable=False,
+        index=True,
+    )
+
+    # Which shift this transaction belongs to
+    shift_id = Column(
+        Integer,
+        ForeignKey("cash_register_shifts.id"),
+        nullable=True,
         index=True,
     )
 
@@ -78,6 +96,11 @@ class Transaction(Base):
     # Table or location reference (for backward compatibility)
     table_ref = Column(String(20), nullable=True)  # "1"-"12" or "barra"
 
+    # AFIP (ARCA) Fiscal Data
+    afip_cae = Column(String(50), nullable=True)
+    afip_vto_cae = Column(String(20), nullable=True)
+    afip_voucher_num = Column(Integer, nullable=True)
+
     # Timestamps
     created_at = Column(
         DateTime(timezone=True),
@@ -88,8 +111,10 @@ class Transaction(Base):
     completed_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    user = relationship("User", back_populates="transactions")
+    user = relationship("User", back_populates="transactions", foreign_keys=[user_id])
+    operator = relationship("User", foreign_keys=[operator_id])
     terminal = relationship("Terminal", back_populates="transactions")
+    shift = relationship("CashRegisterShift")
     items = relationship(
         "TransactionItem",
         back_populates="transaction",

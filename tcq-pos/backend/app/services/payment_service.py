@@ -69,7 +69,9 @@ class PaymentService:
         snapshot = [{"name": i["product_name"], "qty": i["quantity"], "price": i["unit_price"], "subtotal": i["subtotal"]} for i in items_detail]
         txn = Transaction(
             user_id=order.user_id,
+            operator_id=order.operator_id,
             terminal_id=order.terminal_id,
+            shift_id=terminal.active_shift_id,
             method=order.method,
             status="PENDING",
             total_amount=total,

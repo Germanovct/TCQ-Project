@@ -29,6 +29,7 @@ class CreateOrderRequest(BaseModel):
     terminal_id: int
     user_id: Optional[UUID] = None  # Required for TCQ_BALANCE
     table_ref: Optional[str] = None  # "1"-"12" or "barra"
+    operator_id: Optional[UUID] = None  # Barman processing the sale
 
 
 class OrderItemDetail(BaseModel):
@@ -60,6 +61,7 @@ class TransactionResponse(BaseModel):
     """Full transaction detail."""
     id: UUID
     user_id: Optional[UUID] = None
+    operator_id: Optional[UUID] = None
     terminal_id: int
     method: str
     status: str

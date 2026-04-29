@@ -97,7 +97,7 @@ class User(Base):
     )
 
     # Relationships
-    transactions = relationship("Transaction", back_populates="user", lazy="selectin")
+    transactions = relationship("Transaction", back_populates="user", foreign_keys="Transaction.user_id", lazy="selectin")
 
     def __repr__(self):
         return f"<User {self.email} balance=${self.tcq_balance}>"

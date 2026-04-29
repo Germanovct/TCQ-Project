@@ -89,7 +89,7 @@ async def top_up_user(user_id: str, data: TopUpRequest, db: AsyncSession = Depen
     import uuid
     try:
         new_balance = await WalletService.credit(db, uuid.UUID(user_id), data.amount)
-        await db.commit()
+        # Note: commit is handled by get_db dependency
         return UserBalanceResponse(
             user_id=uuid.UUID(user_id),
             tcq_balance=float(new_balance),
@@ -168,8 +168,8 @@ async def update_barman(user_id: str, data: UserUpdate, db: AsyncSession = Depen
         
     if data.password:
         user.hashed_password = hash_password(data.password)
-        
-    await db.commit()
+    
+    # Note: commit is handled by get_db dependency
+    await db.flush()
     await db.refresh(user)
     return user
-

@@ -67,6 +67,13 @@
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.15);
+  --shadow-glow-accent: 0 0 24px rgba(6, 214, 160, 0.12);
+  --shadow-premium: 0 8px 32px rgba(139, 92, 246, 0.08), 0 0 0 1px rgba(139, 92, 246, 0.1);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(18, 18, 26, 0.7);
+  --glass-border: rgba(139, 92, 246, 0.15);
+  --glass-blur: blur(16px);
 
   /* Typography */
   --font-base: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -129,23 +136,40 @@ body {
 .cart-panel {
   width: 380px;
   min-width: 380px;
-  background: var(--bg-surface);
-  border-left: 1px solid var(--border-subtle);
+  background: linear-gradient(180deg, var(--bg-surface) 0%, rgba(22, 22, 42, 0.95) 100%);
+  border-left: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.4), inset 1px 0 0 rgba(139, 92, 246, 0.06);
 }
 
 /* ── Top Bar ── */
 .topbar {
-  background: linear-gradient(135deg, var(--bg-elevated), var(--bg-card));
-  border: 1px solid var(--border-subtle);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: var(--space-md) var(--space-lg);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-premium);
+  position: relative;
+  overflow: hidden;
+}
+.topbar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent), var(--brand-primary));
+  background-size: 200% 100%;
+  animation: gradientShift 4s ease infinite;
+}
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 .topbar-left h1 {
@@ -196,6 +220,46 @@ body {
 .topbar-actions {
   display: flex;
   gap: var(--space-sm);
+}
+
+/* ── Live Clock ── */
+.live-clock {
+  text-align: center;
+  padding: 0 var(--space-md);
+}
+.clock-date {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.clock-time {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--brand-primary-light);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── WebSocket Connection Indicator ── */
+.ws-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: 6px;
+  vertical-align: middle;
+  transition: background var(--transition-base);
+}
+.ws-indicator.online { background: var(--success); box-shadow: 0 0 6px var(--success); }
+.ws-indicator.offline { background: var(--danger); animation: pulse 1.5s infinite; }
+
+/* ── Ticket Modal ── */
+.ticket-content {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
 }
 
 /* ── Buttons ── */
@@ -301,6 +365,11 @@ body {
   transition: all var(--transition-base);
   position: relative;
   overflow: hidden;
+  animation: cardEnter 0.4s ease backwards;
+}
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(12px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .table-card::before {
@@ -316,21 +385,26 @@ body {
 
 .table-card:hover {
   border-color: var(--border-active);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-glow);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-glow), 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+.table-card:active {
+  transform: scale(0.97);
 }
 
 .table-card.occupied {
   border-color: rgba(6, 214, 160, 0.3);
-  background: linear-gradient(180deg, rgba(6, 214, 160, 0.05), var(--bg-card));
+  background: linear-gradient(180deg, rgba(6, 214, 160, 0.08), var(--bg-card));
+  box-shadow: inset 0 0 20px rgba(6, 214, 160, 0.03);
 }
-.table-card.occupied::before { background: var(--success); }
+.table-card.occupied::before { background: linear-gradient(90deg, var(--success), var(--brand-accent-dark)); }
+.table-card.occupied:hover { box-shadow: var(--shadow-glow-accent), 0 12px 24px rgba(0, 0, 0, 0.3); }
 
 .table-card.barra {
   border-color: rgba(139, 92, 246, 0.3);
   background: linear-gradient(180deg, rgba(139, 92, 246, 0.08), var(--bg-card));
 }
-.table-card.barra::before { background: var(--brand-primary); }
+.table-card.barra::before { background: linear-gradient(90deg, var(--brand-primary), var(--brand-primary-dark)); }
 
 .table-num {
   font-size: 2rem;
@@ -401,16 +475,16 @@ body {
   cursor: pointer;
   transition: all var(--transition-fast);
   min-height: 110px;
+  animation: cardEnter 0.35s ease backwards;
 }
 
 .product-card:hover:not(.out-of-stock) {
   border-color: var(--brand-primary);
   background: rgba(139, 92, 246, 0.08);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-glow);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-glow), 0 8px 20px rgba(0, 0, 0, 0.25);
 }
-
-.product-card:active:not(.out-of-stock) { transform: scale(0.97); }
+.product-card:active:not(.out-of-stock) { transform: scale(0.96); }
 
 .product-card.out-of-stock {
   opacity: 0.35;
@@ -633,21 +707,22 @@ body {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .modal {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   padding: var(--space-xl);
   max-width: 600px;
   width: 90%;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: var(--shadow-lg);
-  animation: slideUp 0.3s var(--transition-slow);
+  box-shadow: var(--shadow-lg), 0 0 40px rgba(139, 92, 246, 0.08);
+  animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .modal-header {
@@ -711,13 +786,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at center, var(--bg-elevated) 0%, var(--bg-base) 70%);
+  background: radial-gradient(ellipse at 30% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(6, 214, 160, 0.08) 0%, transparent 50%),
+              var(--bg-base);
   padding: var(--space-md);
 }
 
 .login-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   padding: var(--space-2xl);
   width: 100%;
@@ -725,7 +804,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  box-shadow: var(--shadow-lg), var(--shadow-glow);
+  box-shadow: var(--shadow-lg), 0 0 60px rgba(139, 92, 246, 0.08);
+  animation: modalIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .login-logo {

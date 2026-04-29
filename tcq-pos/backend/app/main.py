@@ -16,6 +16,7 @@ from app.api.products import router as products_router
 from app.api.terminals import router as terminals_router
 from app.api.webhooks import router as webhooks_router
 from app.api.dashboard import router as dashboard_router
+from app.api.dj import router as dj_router
 
 settings = get_settings()
 
@@ -56,8 +57,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",             # Frontend local de Vite
-        "https://tcq-project.onrender.com",  # Dominio en producción
-        "http://localhost:4173"              # Vite preview
+        "http://localhost:4173",             # Vite preview
+        "https://tcq-project.onrender.com",  # Backend en producción
+        "https://tcq-pos.netlify.app"        # Frontend en producción
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -71,6 +73,7 @@ app.include_router(products_router, prefix="/api/v1")
 app.include_router(terminals_router, prefix="/api/v1")
 app.include_router(webhooks_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
+app.include_router(dj_router, prefix="/api/v1")
 
 
 @app.get("/")
