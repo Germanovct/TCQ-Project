@@ -12,10 +12,16 @@ class AfipService:
         
         try:
             if settings.AFIP_CUIT > 0 and settings.AFIP_ACCESS_TOKEN:
+                # Read cert and key contents
+                with open(settings.AFIP_CERT_PATH, 'r') as f:
+                    cert_content = f.read()
+                with open(settings.AFIP_KEY_PATH, 'r') as f:
+                    key_content = f.read()
+
                 self.afip = Afip({
                     "CUIT": settings.AFIP_CUIT,
-                    "cert": settings.AFIP_CERT_PATH,
-                    "key": settings.AFIP_KEY_PATH,
+                    "cert": cert_content,
+                    "key": key_content,
                     "production": settings.AFIP_PRODUCTION,
                     "access_token": settings.AFIP_ACCESS_TOKEN
                 })
