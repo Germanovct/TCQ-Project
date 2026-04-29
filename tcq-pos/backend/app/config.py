@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     AFIP_ACCESS_TOKEN: str = "7KPo35FLH0hfUKo7oojv4tsudS5LYCHKZ0PkYaBOWoJG7HNlqtG1cJ2e1Ma0XOxj"
     AFIP_CERT_PATH: str = "afip_cert.crt"
     AFIP_KEY_PATH: str = "afip_key.key"
-    AFIP_PRODUCTION: bool = False
+    AFIP_PRODUCTION: bool = True
 
     # App Settings
     APP_NAME: str = "TCQ POS"
