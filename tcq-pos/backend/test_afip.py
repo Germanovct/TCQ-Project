@@ -1,17 +1,24 @@
 import asyncio
-from app.services.afip_service import afip_service
+from app.config import get_settings
+from afip import Afip
 
-async def main():
-    if not afip_service.initialized:
-        print("AFIP Service not initialized.")
-        return
-    print("Testing AFIP connection...")
-    try:
-        # Check dummy server status
-        status = afip_service.afip.ElectronicBilling.getServerStatus()
-        print(f"AFIP Server Status: {status}")
-    except Exception as e:
-        print(f"Error testing AFIP: {e}")
+settings = get_settings()
 
-if __name__ == "__main__":
-    asyncio.run(main())
+with open(settings.AFIP_CERT_PATH, 'r') as f:
+    cert_content = f.read()
+with open(settings.AFIP_KEY_PATH, 'r') as f:
+    key_content = f.read()
+
+afip_local = Afip({
+    "CUIT": settings.AFIP_CUIT,
+    "cert": cert_content,
+    "key": key_content,
+    "production": True,
+    "access_token": settings.AFIP_ACCESS_TOKEN
+})
+
+try:
+    last_voucher = afip_local.ElectronicBilling.getLastVoucher(1, 6)
+    print("Success! Last voucher:", last_voucher)
+except Exception as e:
+    print("Error:", e)

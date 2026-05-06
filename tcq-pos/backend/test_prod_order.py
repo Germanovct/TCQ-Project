@@ -12,7 +12,7 @@ async def test():
     async with Session() as db:
         order = CreateOrderRequest(
             items=[OrderItem(product_id=1, quantity=1)],
-            method="CASH",
+            method="MERCADO_PAGO",
             terminal_id=1,
             table_ref="barra",
             operator_id=uuid.UUID("d7313ce3-a968-442b-b428-adf66c47adb3") # barman

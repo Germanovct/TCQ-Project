@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # AFIP (ARCA)
     AFIP_CUIT: int = 20383511535
-    AFIP_ACCESS_TOKEN: str = "7KPo35FLH0hfUKo7oojv4tsudS5LYCHKZ0PkYaBOWoJG7HNlqtG1cJ2e1Ma0XOxj"
+    AFIP_ACCESS_TOKEN: str = ""
     AFIP_CERT_PATH: str = "afip_cert.crt"
     AFIP_KEY_PATH: str = "afip_key.key"
     AFIP_PRODUCTION: bool = True
