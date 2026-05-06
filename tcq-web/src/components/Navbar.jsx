@@ -33,13 +33,13 @@ export default function Navbar() {
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav ms-auto gap-3">
             <li className="nav-item">
-              <Link className="nav-link modern-link" to="/nosotros">
-                Nosotros
+              <Link className="nav-link modern-link" to="/">
+                TCQ Club
               </Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link modern-link" to="/booking">
-                Booking Artist
+              <Link className="nav-link modern-link" to="/vinyl">
+                Vinyl Order
               </Link>
             </li>
             <li className="nav-item">
@@ -53,23 +53,18 @@ export default function Navbar() {
               </Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link modern-link" to="/merch">
-                Merch
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link modern-link" to="/fractalbar">
-                Fractal Bar
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link modern-link" to="/events">
-                Events
-              </Link>
+              <a 
+                className="nav-link modern-link" 
+                href="https://venti.com.ar/organizadores/tcq" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                Tickets / Events
+              </a>
             </li>
 
             {/* Botones especiales */}
-            <li className="nav-item">
+            <li className="nav-item ms-lg-3">
               <a
                 className="btn btn-pill btn-gradient"
                 href="https://app.tcqlub.com"
@@ -77,21 +72,6 @@ export default function Navbar() {
               >
                 <i className="bi bi-wallet2 me-2"></i> Billetera Cashless
               </a>
-            </li>
-            <li className="nav-item">
-              <a
-                className="btn btn-pill btn-gradient"
-                href="https://venti.com.ar/organizadores/tcq"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                EVENTOS/QR
-              </a>
-            </li>
-            <li className="nav-item">
-              <Link className="btn btn-pill btn-outline-pill" to="/suscripcion">
-                Suscripción
-              </Link>
             </li>
           </ul>
         </div>
