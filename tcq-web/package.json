@@ -1,0 +1,53 @@
+{
+  "name": "my-ticket",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "vite --open",
+    "dev:backend": "node backend/server.js",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "22": "^0.0.0",
+    "axios": "^1.12.2",
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.18.2",
+    "framer-motion": "^12.23.22",
+    "i18next": "^25.5.3",
+    "mercadopago": "^2.9.0",
+    "mongodb": "^6.20.0",
+    "node-fetch": "^3.3.2",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-i18next": "^16.0.0",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.9.3",
+    "react-slick": "^0.31.0",
+    "react-tsparticles": "^2.12.2",
+    "rollup": "^4.52.4",
+    "slick-carousel": "^1.8.1",
+    "swiper": "^12.0.2",
+    "tsparticles": "^2.12.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.3",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.36.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.4.0",
+    "nodemon": "^3.1.10",
+    "vite": "^7.1.9"
+  }
+}

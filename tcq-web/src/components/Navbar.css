@@ -1,0 +1,32 @@
+.artlab-nav {
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.artlab-nav.scrolled {
+  background: rgba(0, 0, 0, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.artlab-nav .nav-link {
+  color: #fff !important;
+  margin: 0 10px;
+  transition: color 0.2s;
+}
+.artlab-nav .nav-link:hover {
+  color: #ff007a !important;
+}
+
+.artlab-nav .navbar-brand img {
+  object-fit: contain;
+}
+
+.cart-icon svg {
+  fill: #fff;
+  transition: fill 0.2s;
+}
+.cart-icon:hover svg {
+  fill: #ff007a;
+}

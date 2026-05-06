@@ -1,0 +1,26 @@
+# ==========================
+# ⚙️ Node / Express
+# ==========================
+node_modules/
+dist/
+.cache/
+
+# ==========================
+# 🧩 Archivos de entorno
+# ==========================
+.env
+.env.local
+.env.production
+.env.development
+
+# ==========================
+# ⚙️ Logs
+# ==========================
+logs/
+*.log
+npm-debug.log*
+
+# ==========================
+# 🧠 Sistema operativo
+# ==========================
+.DS_Store

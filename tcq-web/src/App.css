@@ -1,0 +1,171 @@
+/* --- Navbar estilo Artlab --- */
+.artlab-nav {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1000;
+}
+
+.artlab-nav.scrolled {
+  background: rgba(0, 0, 0, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.artlab-nav .navbar-brand img {
+  height: 40px;
+  object-fit: contain;
+}
+
+.artlab-nav .nav-link {
+  color: #fff !important;
+  font-weight: 500;
+  margin: 0 8px;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.artlab-nav .nav-link::after {
+  content: "";
+  display: block;
+  width: 0;
+  height: 2px;
+  background: #ff007a;
+  transition: width 0.3s;
+  margin-top: 3px;
+}
+
+.artlab-nav .nav-link:hover::after {
+  width: 100%;
+}
+
+.artlab-nav .nav-link:hover {
+  color: #ff007a !important;
+}
+
+/* --- Botones pill --- */
+.btn-pill {
+  border-radius: 50px;
+  padding: 8px 18px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.btn-gradient {
+  background: linear-gradient(45deg, #ff007a, #ff8c00);
+  color: #fff !important;
+  border: none;
+}
+
+.btn-gradient:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-outline-pill {
+  border: 2px solid #ff007a;
+  color: #ff007a !important;
+  background: transparent;
+}
+
+.btn-outline-pill:hover {
+  background: #ff007a;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
+/* --- Hero Section --- */
+header {
+  position: relative;
+}
+
+header .overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* --- Hero Subtítulo con efecto glitch --- */
+.hero-subtitle {
+  font-size: 2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  position: relative;
+  color: #fff;
+  animation: glitch 2s infinite;
+}
+
+.hero-subtitle.glitch::before,
+.hero-subtitle.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  clip: rect(0, 900px, 0, 0);
+}
+
+.hero-subtitle.glitch::before {
+  left: 2px;
+  text-shadow: -2px 0 #ff00c1;
+  animation: glitchTop 2s infinite linear alternate-reverse;
+}
+
+.hero-subtitle.glitch::after {
+  left: -2px;
+  text-shadow: -2px 0 #00fff9;
+  animation: glitchBottom 2s infinite linear alternate-reverse;
+}
+
+@keyframes glitch {
+  0% { transform: none; }
+  20% { transform: skew(0.5deg, 0.5deg); }
+  40% { transform: skew(-0.5deg, -0.5deg); }
+  60% { transform: none; }
+  80% { transform: skew(0.5deg, -0.5deg); }
+  100% { transform: none; }
+}
+
+@keyframes glitchTop {
+  0% { clip: rect(0, 9999px, 0, 0); }
+  20% { clip: rect(0, 9999px, 40px, 0); }
+  40% { clip: rect(0, 9999px, 0, 0); }
+  60% { clip: rect(0, 9999px, 30px, 0); }
+  80% { clip: rect(0, 9999px, 0, 0); }
+  100% { clip: rect(0, 9999px, 20px, 0); }
+}
+
+@keyframes glitchBottom {
+  0% { clip: rect(0, 9999px, 0, 0); }
+  20% { clip: rect(70px, 9999px, 90px, 0); }
+  40% { clip: rect(0, 9999px, 0, 0); }
+  60% { clip: rect(40px, 9999px, 60px, 0); }
+  80% { clip: rect(0, 9999px, 0, 0); }
+  100% { clip: rect(10px, 9999px, 30px, 0); }
+}
+
+/* --- Footer --- */
+.footer-modern {
+  background: #000;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+}
+
+/* --- Ajustes por el navbar fijo --- */
+body {
+  padding-top: 80px; /* altura aprox. del navbar */
+}
+
+h1, h2, section {
+  scroll-margin-top: 100px; /* evita que el navbar tape los títulos */
+}
+
+/* --- Responsivo --- */
+@media (max-width: 768px) {
+  .hero-subtitle {
+    font-size: 1.3rem;
+  }
+}

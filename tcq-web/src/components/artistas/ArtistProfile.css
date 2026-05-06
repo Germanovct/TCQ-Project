@@ -1,0 +1,364 @@
+/* ===== ArtistProfile styles (responsive & modern) ===== */
+.artist-profile {
+  color: #fff;
+  max-width: 1000px;
+  margin: 0 auto;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  text-align: center;
+  padding: 2.2rem 1rem;
+  background: linear-gradient(135deg, #0a0a0a, #141414);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* Title */
+.artist-name {
+  font-size: 2.4rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+}
+
+/* Carousel wrapper */
+.artist-carousel {
+  max-width: 1000px;
+  margin: 0 auto 1.2rem;
+  position: relative;
+  padding: 0 14px;
+}
+
+/* slide inner */
+.carousel-slide-inner {
+  padding: 0 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* image */
+.carousel-img {
+  width: 100%;
+  max-height: 340px;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  transition: transform 0.25s ease;
+  cursor: pointer;
+}
+
+.carousel-img:hover {
+  transform: scale(1.03);
+}
+
+/* placeholder */
+.carousel-placeholder {
+  color: #bbb;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+}
+
+/* hide slick's default arrows (they use inline styles) */
+.slick-prev,
+.slick-next {
+  display: none !important;
+}
+
+/* custom arrows inside .artist-carousel */
+.artist-carousel .custom-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: transform .16s ease, background .16s ease;
+}
+
+.artist-carousel .custom-arrow svg {
+  width: 18px;
+  height: 18px;
+}
+
+.artist-carousel .custom-arrow.prev {
+  left: 12px;
+}
+
+.artist-carousel .custom-arrow.next {
+  right: 12px;
+}
+
+.artist-carousel .custom-arrow:hover {
+  transform: translateY(-50%) scale(1.06);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* touch hit area */
+@media (max-width: 768px) {
+  .artist-carousel {
+    padding: 0 10px;
+  }
+
+  .artist-carousel .custom-arrow {
+    width: 44px;
+    height: 44px;
+  }
+
+  .artist-carousel .custom-arrow.prev {
+    left: 8px;
+  }
+
+  .artist-carousel .custom-arrow.next {
+    right: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .artist-carousel .custom-arrow {
+    width: 40px;
+    height: 40px;
+  }
+
+  .artist-carousel .custom-arrow.prev {
+    left: 6px;
+  }
+
+  .artist-carousel .custom-arrow.next {
+    right: 6px;
+  }
+}
+
+/* Bio */
+.artist-bio {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #ddd;
+  max-width: 900px;
+  margin: 0.8rem auto 1.2rem auto;
+  text-align: left;
+}
+
+/* Social links */
+.artist-redes {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #fff;
+  text-decoration: none;
+  transition: transform .16s ease, background .16s ease;
+}
+
+.social-link svg {
+  width: 18px;
+  height: 18px;
+}
+
+.social-link:hover {
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Presskit button */
+.btn-presskit {
+  display: inline-block;
+  padding: 0.6rem 1.2rem;
+  border-radius: 40px;
+  border: 2px solid #fff;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* Lightbox */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 2000;
+  padding: 18px;
+}
+
+.lightbox-content {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  max-height: 95vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.lightbox-img {
+  max-width: 88vw;
+  max-height: 88vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+}
+
+/* lightbox controls */
+.lightbox-close {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 2100;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 999px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  border: none;
+}
+
+.lightbox-prev,
+.lightbox-next {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2100;
+  background: rgba(0, 0, 0, 0.6);
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  border: none;
+}
+
+.lightbox-prev {
+  left: 12px;
+}
+
+.lightbox-next {
+  right: 12px;
+}
+
+/* === Overlay sobre imagen === */
+.carousel-img-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.artist-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.artist-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.artist-overlay-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.artist-overlay-info {
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+/* En desktop también se activa con hover */
+.carousel-img-wrapper:hover .artist-overlay {
+  opacity: 1;
+  pointer-events: all;
+  }
+
+/* responsive lightbox */
+@media (max-width: 1024px) {
+
+  .lightbox-prev,
+  .lightbox-next {
+    width: 48px;
+    height: 48px;
+  }
+
+  .lightbox-close {
+    width: 40px;
+    height: 40px;
+    top: 12px;
+    right: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .artist-name {
+    font-size: 1.8rem;
+  }
+
+  .carousel-img {
+    max-height: 220px;
+  }
+
+  .lightbox-prev,
+  .lightbox-next {
+    width: 44px;
+    height: 44px;
+  }
+
+  .lightbox-prev { left: 8px; }
+  .lightbox-next { right: 8px; }
+
+  .lightbox-close {
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+  }
+
+  @media (max-width: 420px) {
+  .lightbox-prev,
+  .lightbox-next {
+    width: 38px;
+    height: 38px;
+  }
+  .lightbox-prev { left: 6px; }
+  .lightbox-next { right: 6px; }
+}
+}
