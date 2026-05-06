@@ -14,25 +14,26 @@
 3. **`mercadopago_service.py`**: No deployar a Render sin confirmar que las variables de entorno están configuradas en el portal de MP primero.
 4. **Variables de entorno**: Nunca hardcodear keys ni tokens. Siempre desde `.env` local o variables de Render/Netlify.
 
-## Estructura del proyecto
+## Estructura del Ecosistema (Monorepo)
 
 ```
-TCQ-POS/
-├── backend/
-│   ├── main.py               # Entry point FastAPI
-│   ├── mercadopago_service.py # Integración MP — manejo especial
-│   ├── models.py
-│   ├── routes/
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   └── App.jsx
-│   ├── public/
-│   └── package.json
-└── CLAUDE.md
+TCQ-Project/
+├── backend/            # API Centralizada (FastAPI) para todo el ecosistema
+├── tcq-pos/            # POS para barmans (React PWA)
+├── tcq-client/         # Billetera Cashless para usuarios (React PWA)
+├── tcq-djs/            # Portal para consumo de DJs invitados (React PWA)
+├── tcq-web/            # Página Web Principal del club (React/Vite)
+└── CLAUDE.md           # Reglas maestras del proyecto
 ```
+
+## Fase 2: Ticketera Propia (Roadmap)
+
+El ecosistema TCQ eliminará dependencias de terceros (ej. Venti) integrando su propia venta de tickets. La arquitectura definida es la siguiente:
+
+1. **Pasarela Web (Checkout Pro):** A diferencia del POS físico (donde está prohibido), la venta online de tickets en `tcq-web` **SÍ** utilizará *Mercado Pago Checkout Pro* para cobrar con tarjeta/dinero en cuenta de forma asincrónica.
+2. **Generación de Ticket:** Al recibir el Webhook de pago aprobado, el backend genera un `Ticket` con un QR encriptado (UUID) y lo asocia al usuario.
+3. **Billetera Centralizada:** El usuario visualiza su entrada y su QR directamente en `tcq-client` (Wallet), junto a su saldo para la barra.
+4. **Validación en Puerta:** La app `tcq-pos` tendrá un modo "Recepción" para que el portero escanee los tickets, verifique la validez en el backend y prevenga duplicados.
 
 ## Entornos
 
