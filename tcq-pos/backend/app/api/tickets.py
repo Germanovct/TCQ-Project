@@ -1,6 +1,6 @@
 import logging
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, update
 from sqlalchemy.orm import selectinload
@@ -27,7 +27,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Tickets"])
 
 @router.post("/tickets/purchase")
-async def purchase_ticket(req: TicketPurchaseRequest, db: AsyncSession = Depends(get_db)):
+async def purchase_ticket(
+    req: TicketPurchaseRequest, 
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db)
+):
     try:
         # 1. Validate Ticket Type and Event
         tt_query = select(TicketType).options(selectinload(TicketType.event)).filter(TicketType.id == req.ticket_type_id)
@@ -87,7 +91,7 @@ async def purchase_ticket(req: TicketPurchaseRequest, db: AsyncSession = Depends
                 })
             except: pass
 
-            await send_ticket_email(req.email, new_ticket, event)
+            background_tasks.add_task(send_ticket_email, req.email, new_ticket, event)
             return {
                 "success": True,
                 "ticket_id": str(new_ticket.id),
@@ -254,7 +258,11 @@ async def send_ticket_email(email: str, ticket: Ticket, event: Event):
         logger.error(f"⚠️ Error sending ticket email: {e}")
 
 @router.post("/webhooks/mercadopago/ticket")
-async def mercadopago_ticket_webhook(request: Request, db: AsyncSession = Depends(get_db)):
+async def mercadopago_ticket_webhook(
+    request: Request, 
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db)
+):
     """
     Webhook that receives payment status updates from MercadoPago.
     """
@@ -310,8 +318,9 @@ async def mercadopago_ticket_webhook(request: Request, db: AsyncSession = Depend
                 "message": f"🎟️ Nueva entrada vendida: {ticket.ticket_type.name} - ${ticket.ticket_type.price}"
             })
             
-            # Send Email
-            await send_ticket_email(ticket.purchaser_email, ticket, ticket.event)
+            
+            # Send Email in background
+            background_tasks.add_task(send_ticket_email, ticket.purchaser_email, ticket, ticket.event)
             
             return {"status": "approved, ticket generated"}
             

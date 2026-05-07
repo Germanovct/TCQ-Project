@@ -77,12 +77,12 @@ class EmailService:
 
             # Titan works best with SSL on 465
             try:
-                with smtplib.SMTP_SSL(self.host, self.port, timeout=10) as server:
+                with smtplib.SMTP_SSL(self.host, self.port, timeout=5) as server:
                     server.login(self.user, self.password)
                     server.send_message(msg)
             except Exception as e:
                 logger.warning(f"⚠️ SMTP_SSL failed, trying 587 STARTTLS... Error: {e}")
-                with smtplib.SMTP(self.host, 587, timeout=10) as server:
+                with smtplib.SMTP(self.host, 587, timeout=5) as server:
                     server.starttls()
                     server.login(self.user, self.password)
                     server.send_message(msg)
