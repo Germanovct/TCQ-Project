@@ -38,17 +38,19 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan: startup and shutdown events."""
     logger.info("🚀 Starting TCQ POS System...")
-    # Create tables on startup (dev only — use Alembic in production)
-    if settings.DEBUG:
-        await init_db()
-        logger.info("✅ Database tables created/verified")
     
-    # Run migrations (safe to run always as it uses IF NOT EXISTS)
+    # Run migrations
+    from .migrate import migrate
     try:
         await migrate()
         logger.info("✅ Migrations applied")
     except Exception as e:
         logger.error(f"❌ Migration failed: {e}")
+
+    if settings.DEBUG:
+        await init_db()
+        logger.info("✅ Database tables created/verified")
+        
     logger.info("✅ TCQ POS System ready!")
     yield
     logger.info("👋 Shutting down TCQ POS System...")
@@ -73,17 +75,7 @@ app = FastAPI(
 # CORS — allow the React PWA frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",             # Frontend local de Vite
-        "http://localhost:4173",             # Vite preview
-        "https://tcq-project.onrender.com",  # Backend en producción
-        "https://tcq-pos.netlify.app",       # Frontend en producción original
-        "https://tcqlub.com",                # Dominios Custom
-        "https://www.tcqlub.com",
-        "https://pos.tcqlub.com",
-        "https://client.tcqlub.com",
-        "https://wallet.tcqlub.com"
-    ],
+    allow_origins=["*"], # Temporalmente para debug total
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
