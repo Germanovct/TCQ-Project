@@ -1,87 +1,46 @@
-# TCQ-POS — Constitución del Proyecto
+# TCQ-Project — Estado del Proyecto & Roadmap
 
-## Stack
-- **Backend**: FastAPI (Python) → deployado en Render
-- **Frontend**: React (Vite) → deployado en Netlify
-- **Base de datos**: SQLite
-- **Pagos**: Mercado Pago — QR Dinámico Interoperativo para POS. Checkout Pro habilitado para tickets web.
-- **Realtime**: WebSocket
+## Stack Tecnológico
+- **Backend**: FastAPI (Python) → Render (Production)
+- **Frontend Web**: React (Vite) → Netlify
+- **Frontend Wallet (PWA)**: React (Vite) → Netlify (client.tcqlub.com)
+- **Base de datos**: PostgreSQL (Render)
+- **Imágenes**: Cloudinary (Almacenamiento permanente de Flyers)
+- **Pagos**: 
+  - **POS**: QR Dinámico Interoperativo.
+  - **Web Tickets**: Mercado Pago Checkout Pro.
 
-## Reglas críticas — NUNCA violar
+## Reglas Críticas
+1. **Cloudinary**: Todos los flyers de eventos deben subirse mediante el endpoint `/events/upload-flyer` que ahora usa Cloudinary. NUNCA usar almacenamiento local en Render.
+2. **CORS**: Mantener la política de CORS actualizada para permitir `tcqlub.com` y sus subdominios.
+3. **Tickets**: La asociación entre tickets y usuarios se hace mediante el `email`.
 
-1. **WebSocket**: Siempre `wss://` en producción. NUNCA `ws://` en contexto HTTPS.
-2. **Mercado Pago**: Siempre usar el endpoint QR Dinámico Interoperativo para el POS. Checkout Pro se utiliza exclusivamente para la venta de tickets online en tcqlub.com.
-3. **`mercadopago_service.py`**: No deployar a Render sin confirmar que las variables de entorno están configuradas en el portal de MP primero.
-4. **Variables de entorno**: Nunca hardcodear keys ni tokens. Siempre desde `.env` local o variables de Render/Netlify.
+## Avances Recientes (Hoy)
+- [x] **Integración Cloudinary**: Configurada y funcional para evitar pérdida de imágenes en redeploys.
+- [x] **Flujo de Tickets Gratuitos**: Implementado modal de éxito con QR visible y opción de impresión en la landing web.
+- [x] **Sistema de Validación (Portería)**: Implementado modo "Portero" en el POS con escaneo QR y validación en tiempo real.
+- [x] **Email Real (SMTP)**: Integración con SMTP para envío automático de tickets con diseño premium.
+- [x] **Wallet - Mis Entradas**: Refinada la vista de tickets en la wallet del cliente con nombres de eventos y estados.
+- [x] **Corrección de Error 500**: Resueltos problemas de nombres de atributos (`event.name`) y sintaxis en modelos.
+- [x] **Resiliencia de DB**: Implementado sistema de migración automática de columnas para producción.
 
-## Estructura del Ecosistema (Monorepo)
+## Pendientes (Roadmap Próximos Pasos)
 
-```
-TCQ-Project/
-├── backend/            # API Centralizada (FastAPI) para todo el ecosistema
-├── tcq-pos/            # POS para barmans (React PWA)
-├── tcq-client/         # Billetera Cashless para usuarios (React PWA)
-├── tcq-djs/            # Portal para consumo de DJs invitados (React PWA)
-├── tcq-web/            # Página Web Principal del club (React/Vite)
-└── CLAUDE.md           # Reglas maestras del proyecto
-```
+### 1. Admin Dashboard 📊
+- Sección de estadísticas de venta de tickets por evento en tiempo real.
+- Panel de control para gestionar stock de entradas desde el POS.
 
-## Fase 2: Ticketera Propia (Roadmap)
+### 2. Mejoras de UI/UX
+- Notificaciones Push para cuando se acredita un pago de ticket (Web Push).
+- Modo Offline para el POS en caso de micro-cortes de internet.
 
-El ecosistema TCQ eliminará dependencias de terceros (ej. Venti) integrando su propia venta de tickets. La arquitectura definida es la siguiente:
+## Variables de Entorno Requeridas (Render)
+- `DATABASE_URL`: Postgres connection string.
+- `CLOUDINARY_URL`: `cloudinary://<api_key>:<api_secret>@<cloud_name>`
+- `MP_ACCESS_TOKEN`: Token de producción de Mercado Pago.
+- `ADMIN_PIN`: Pin maestro para acciones de borrado.
+- `SMTP_USER`: Usuario SMTP (ej. gmail).
+- `SMTP_PASSWORD`: Contraseña de aplicación SMTP.
 
-1. **Pasarela Web (Checkout Pro):** A diferencia del POS físico (donde está prohibido), la venta online de tickets en `tcq-web` **SÍ** utilizará *Mercado Pago Checkout Pro* para cobrar con tarjeta/dinero en cuenta de forma asincrónica.
-2. **Generación de Ticket:** Al recibir el Webhook de pago aprobado, el backend genera un `Ticket` con un QR encriptado (UUID) y lo asocia al usuario.
-3. **Billetera Centralizada:** El usuario visualiza su entrada y su QR directamente en `tcq-client` (Wallet), junto a su saldo para la barra.
-4. **Validación en Puerta:** La app `tcq-pos` tendrá un modo "Recepción" para que el portero escanee los tickets, verifique la validez en el backend y prevenga duplicados.
-
-## Entornos
-
-| Variable | Dónde se configura |
-|---|---|
-| `MP_ACCESS_TOKEN` | Render (backend) |
-| `MP_PUBLIC_KEY` | Netlify (frontend) |
-| `WEBSOCKET_URL` | Netlify env vars — debe ser `wss://` |
-| `DATABASE_URL` | Render |
-
-## Contexto del negocio
-
-- Sistema POS para bar/boliche (Antigravity)
-- Flujo principal: mesa → pedido → QR de pago → confirmación por WebSocket → cierre
-- El QR debe ser compatible con múltiples wallets (no solo MP)
-- Aesthetic del frontend: nightclub premium, dark theme
-
-## Cómo correr el proyecto localmente
-
-```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
-
-# Frontend
-cd frontend
-npm install
-npm run dev
-```
-
-## Al revisar código, siempre verificar
-
-- [ ] WebSocket usa `wss://` en variables de entorno de producción
-- [ ] Endpoints de MP apuntan al QR Dinámico (no Checkout Pro)
-- [ ] No hay tokens hardcodeados
-- [ ] Los errores de pago se loguean con suficiente contexto para debuggear
-- [ ] Las rutas de FastAPI tienen manejo de errores explícito
-
-## Al revisar errores de Mercado Pago
-
-- Primero verificar que el `access_token` esté activo en el portal de MP
-- Confirmar que el endpoint usado es `/instore/orders/qr/seller/collectors/{user_id}/pos/{external_pos_id}/qrs`
-- Revisar que el `external_reference` sea único por transacción
-- Verificar que el webhook de confirmación esté configurado y use `wss://`
-
-## Tests
-
-- Los tests del backend están en `backend/tests/`
-- Correr con: `pytest backend/tests/ -v`
-- Antes de cualquier cambio en rutas de pago, correr los tests primero
+---
+*Última actualización: 07 de Mayo, 2026 - Portería, SMTP y Wallet Refinement completados.*

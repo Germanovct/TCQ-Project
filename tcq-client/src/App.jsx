@@ -288,10 +288,21 @@ export default function App() {
                       onClick={() => setSelectedTicket(ticket)}
                     >
                       <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h4 style={{ margin: 0 }}>Ticket #{ticket.qr_code.substring(0, 8)}</h4>
-                        <span className="badge" style={{ background: 'var(--success)', color: '#fff' }}>VÁLIDO</span>
+                        <h4 style={{ margin: 0 }}>{ticket.event_name || 'Evento'}</h4>
+                        <span className="badge" style={{ 
+                          background: ticket.status === 'used' ? 'var(--text-muted)' : 'var(--success)', 
+                          color: '#fff',
+                          fontSize: '0.7rem',
+                          padding: '0.2rem 0.5rem',
+                          borderRadius: '10px'
+                        }}>
+                          {ticket.status === 'used' ? 'USADO' : 'VÁLIDO'}
+                        </span>
                       </div>
-                      <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', opacity: 0.7 }}>Toca para ver el QR</p>
+                      <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', fontWeight: 600, color: 'var(--brand-primary-light)' }}>
+                        {ticket.ticket_type_name || 'Entrada General'}
+                      </p>
+                      <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', opacity: 0.6 }}>Toca para ver el QR</p>
                     </div>
                   ))}
                 </div>
@@ -321,9 +332,14 @@ export default function App() {
           {selectedTicket && (
             <div className="modal-overlay" onClick={() => setSelectedTicket(null)}>
               <div className="modal" onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
-                <h3 className="modal-title">Tu Entrada QR</h3>
-                <p className="modal-text" style={{ marginBottom: '1.5rem' }}>
-                  Mostrá este código en la puerta del evento.
+                <h3 className="modal-title">{selectedTicket.event_name}</h3>
+                <p className="modal-text" style={{ marginBottom: '0.5rem', fontWeight: 600, color: 'var(--brand-primary-light)' }}>
+                  {selectedTicket.ticket_type_name}
+                </p>
+                <p className="modal-text" style={{ marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+                  {selectedTicket.status === 'used' 
+                    ? '❌ Esta entrada ya fue utilizada.' 
+                    : 'Mostrá este código en la puerta del evento.'}
                 </p>
                 <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px', display: 'inline-block', marginBottom: '1.5rem' }}>
                   <QRCodeSVG value={selectedTicket.qr_code} size={220} />

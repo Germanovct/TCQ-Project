@@ -15,6 +15,7 @@ export default function Events() {
     email: ""
   });
   const [purchasing, setPurchasing] = useState(false);
+  const [successData, setSuccessData] = useState(null);
 
   useEffect(() => {
     fetchEvents();
@@ -58,7 +59,7 @@ export default function Events() {
           // Redirigir a MercadoPago
           window.location.href = data.init_point;
         } else {
-          alert("¡MUCHAS GRACIAS POR TU COMPRA!\n\nSi no podés descargar por aquí tu ticket, te lo enviamos por email o podés descargarte nuestra Wallet TCQ, donde vas a poder ver tus tickets y tener muchos beneficios más.");
+          setSuccessData(data);
           setSelectedEvent(null);
           setSelectedTicket("");
         }
@@ -83,6 +84,45 @@ export default function Events() {
         <div className="text-center text-white-50 my-5 py-5">
           <h3>Próximamente...</h3>
           <p>No hay eventos públicos programados en este momento. ¡Mantente alerta!</p>
+        </div>
+      )}
+
+      {/* Modal de Éxito (Gratuito) */}
+      {successData && (
+        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 2000 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content bg-dark text-white border-primary shadow-lg">
+              <div className="modal-header border-secondary">
+                <h5 className="modal-title text-primary fw-bold">¡MUCHAS GRACIAS POR TU COMPRA!</h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setSuccessData(null)}></button>
+              </div>
+              <div className="modal-body text-center py-4">
+                <p className="mb-4 text-white-50">Tu entrada para <strong>{successData.event_name}</strong> ya está lista.</p>
+                
+                <div className="bg-white p-3 rounded-4 d-inline-block mb-4 shadow-sm">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${successData.qr_code}`} 
+                    alt="Ticket QR" 
+                    className="img-fluid"
+                  />
+                </div>
+                
+                <div className="alert alert-info bg-primary bg-opacity-10 border-primary text-white text-start small">
+                  <i className="bi bi-info-circle me-2"></i>
+                  Si no podés descargar por aquí tu ticket, te lo enviamos por email o podés descargarte nuestra <strong>Wallet TCQ</strong>, donde vas a poder ver todos tus tickets QR y acceder a beneficios exclusivos.
+                </div>
+                
+                <div className="d-grid gap-2 mt-4">
+                  <button className="btn btn-primary btn-lg rounded-pill" onClick={() => window.print()}>
+                    Descargar / Imprimir Ticket
+                  </button>
+                  <button className="btn btn-outline-light rounded-pill" onClick={() => setSuccessData(null)}>
+                    Entendido
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

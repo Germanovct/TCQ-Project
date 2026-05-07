@@ -79,6 +79,14 @@ async def get_event_stats(event_id: UUID, db: AsyncSession = Depends(get_db)):
         )
         count_result = await db.execute(count_query)
         sold_count = count_result.scalar() or 0
+
+        # Count validated tickets (status == 'used')
+        val_query = select(func.count(Ticket.id)).filter(
+            Ticket.ticket_type_id == tt.id,
+            Ticket.status == "used"
+        )
+        val_result = await db.execute(val_query)
+        validated_count = val_result.scalar() or 0
         
         stats.append(TicketStats(
             ticket_type_id=tt.id,
@@ -86,6 +94,7 @@ async def get_event_stats(event_id: UUID, db: AsyncSession = Depends(get_db)):
             price=float(tt.price),
             state=tt.state,
             sold=sold_count,
+            validated=validated_count,
             stock=tt.stock
         ))
         

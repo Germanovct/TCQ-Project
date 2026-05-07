@@ -12,6 +12,7 @@ import EventManager from './components/EventManager';
 import { useWebSocket } from './hooks/useWebSocket';
 import { QRCodeSVG } from 'qrcode.react';
 import PublicTicket from './components/PublicTicket';
+import PorteroPortal from './components/PorteroPortal';
 import './index.css';
 
 /* ─── Toast System ─── */
@@ -26,7 +27,7 @@ function Toasts({ toasts }) {
 }
 
 /* ─── Top Bar ─── */
-function TopBar({ terminal, dailyTotal, onOpenRegister, onCloseRegister, onShowReport, user, onShowTeam, onShowProducts, onShowTopUp, onLogout, wsConnected, onShowLiveRegisters, onShowDJ, onShowEvents }) {
+function TopBar({ terminal, dailyTotal, onOpenRegister, onCloseRegister, onShowReport, user, onShowTeam, onShowProducts, onShowTopUp, onLogout, wsConnected, onShowLiveRegisters, onShowDJ, onShowEvents, onShowPortero }) {
   const isOpen = terminal?.is_open;
   return (
     <div className="topbar">
@@ -68,6 +69,7 @@ function TopBar({ terminal, dailyTotal, onOpenRegister, onCloseRegister, onShowR
         )}
         <button className="btn btn-ghost" onClick={onShowReport}>📊 Reporte</button>
         <button className="btn btn-ghost" onClick={onShowDJ}>🎧 DJ</button>
+        <button className="btn btn-ghost" onClick={() => onShowPortero(true)} style={{ color: 'var(--brand-accent)' }}>🚪 Portero</button>
         {!isOpen ? (
           <button className="btn btn-success" onClick={onOpenRegister}>Abrir Caja</button>
         ) : (
@@ -351,6 +353,7 @@ export default function App() {
   const [showDJ, setShowDJ] = useState(false);
   const [showEvents, setShowEvents] = useState(false);
   const [shiftClosedData, setShiftClosedData] = useState(null);
+  const [showPortero, setShowPortero] = useState(false);
 
   // PWA Install Modal (show once per device)
   useEffect(() => {
@@ -717,6 +720,7 @@ export default function App() {
       {ticketModal && <TicketModal data={ticketModal} onClose={() => setTicketModal(null)} />}
       {showDJ && <DJPortal onClose={() => setShowDJ(false)} toast={toast} />}
       {showEvents && <EventManager onClose={() => setShowEvents(false)} toast={toast} />}
+      {showPortero && <PorteroPortal onClose={() => setShowPortero(false)} toast={toast} />}
 
       {/* Stale Shift Warning */}
       {staleShiftWarning && (
@@ -899,6 +903,7 @@ export default function App() {
             onShowLiveRegisters={handleShowLiveRegisters}
             onShowDJ={() => setShowDJ(true)}
             onShowEvents={() => setShowEvents(true)}
+            onShowPortero={() => setShowPortero(true)}
           />
           {view === 'tables' ? (
             <>

@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     # Cloudinary
     CLOUDINARY_URL: str = ""
 
+    # SMTP (Email)
+    SMTP_HOST: str = "smtp.titan.email"
+    SMTP_PORT: int = 465
+    SMTP_USER: str = "tcq@tcqlub.com"
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "tcq@tcqlub.com"
+
     # AFIP (ARCA)
     AFIP_CUIT: int = 20383511535
     AFIP_ACCESS_TOKEN: str = ""

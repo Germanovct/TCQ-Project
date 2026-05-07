@@ -390,6 +390,12 @@ export default function EventManager({ onClose, toast }) {
                     ${stats.reduce((acc, st) => acc + (st.sold * st.price), 0).toLocaleString('es-AR')}
                   </div>
                 </div>
+                <div style={{ background: 'var(--bg-elevated)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>Ingresos (Portería)</div>
+                  <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--brand-accent)' }}>
+                    {stats.reduce((acc, st) => acc + (st.validated || 0), 0)}
+                  </div>
+                </div>
               </div>
 
               {/* Tickets Configuration Area */}
@@ -485,8 +491,8 @@ export default function EventManager({ onClose, toast }) {
                         
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                            <span style={{ color: 'var(--text-muted)' }}>Progreso de venta</span>
-                            <span style={{ fontWeight: 700, color: 'var(--brand-accent)' }}>{st.sold} / {st.stock}</span>
+                            <span style={{ color: 'var(--text-muted)' }}>Ventas: <strong style={{ color: 'var(--brand-primary-light)' }}>{st.sold}/{st.stock}</strong></span>
+                            <span style={{ fontWeight: 700, color: 'var(--brand-accent)' }}>Ingresos: {st.validated || 0}</span>
                           </div>
                           <div style={{ width: '100%', height: '8px', background: 'var(--bg-surface)', borderRadius: '4px', overflow: 'hidden' }}>
                             <div style={{ width: `${Math.min(progress, 100)}%`, height: '100%', background: progress >= 100 ? 'var(--danger)' : 'var(--brand-primary)', transition: 'width 0.5s ease' }} />

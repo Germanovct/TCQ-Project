@@ -56,4 +56,5 @@ class TicketStats(BaseModel):
     price: float
     state: str
     sold: int
+    validated: int
     stock: int

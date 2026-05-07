@@ -111,6 +111,9 @@ class ApiService {
     return res.json();
   }
   createTicketType(eventId, data) { return this.request('POST', `/events/${eventId}/ticket-types`, data); }
+  
+  // Tickets Validation
+  validateTicket(qrCode) { return this.request('POST', '/tickets/validate', { qr_code: qrCode }); }
 }
 
 export const api = new ApiService();
