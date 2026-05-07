@@ -50,7 +50,6 @@ async def purchase_ticket(req: TicketPurchaseRequest, db: AsyncSession = Depends
     )
     
     # Try to associate with existing user
-    from app.models.user import User
     user_result = await db.execute(select(User).where(User.email == req.email.lower()))
     existing_user = user_result.scalar_one_or_none()
     if existing_user:
@@ -79,7 +78,7 @@ async def purchase_ticket(req: TicketPurchaseRequest, db: AsyncSession = Depends
 
     # 4. Generate MercadoPago Checkout Pro Preference (for paid tickets)
     items = [{
-        "title": f"Entrada: {event.title} - {ticket_type.name}",
+        "title": f"Entrada: {event.name} - {ticket_type.name}",
         "quantity": 1,
         "unit_price": float(ticket_type.price)
     }]
@@ -130,10 +129,10 @@ async def send_ticket_email(email: str, ticket: Ticket, event: Event):
     """
     logger.info("=" * 50)
     logger.info(f"📧 ENVIANDO EMAIL A: {email}")
-    logger.info(f"ASUNTO: Tu entrada para {event.title} confirmada!")
+    logger.info(f"ASUNTO: Tu entrada para {event.name} confirmada!")
     logger.info(f"CUERPO:")
     logger.info(f"Hola {ticket.purchaser_first_name},")
-    logger.info(f"¡Gracias por tu compra! Tu entrada para '{event.title}' ha sido confirmada.")
+    logger.info(f"¡Gracias por tu compra! Tu entrada para '{event.name}' ha sido confirmada.")
     logger.info(f"Código QR: {ticket.qr_code}")
     logger.info("Para ver tus entradas cómodamente en tu celular, descarga o ingresa a Wallet TCQ (https://tcqlub.com)!")
     logger.info("=" * 50)
