@@ -27,7 +27,7 @@ async def purchase_ticket(req: TicketPurchaseRequest, db: AsyncSession = Depends
         tt_result = await db.execute(tt_query)
         ticket_type = tt_result.scalar_one_or_none()
         
-        if not ticket_type or not ticket_type.is_active:
+        if not ticket_type or ticket_type.state == "not_available":
             raise HTTPException(status_code=400, detail="El tipo de ticket no existe o no está activo.")
             
         event = ticket_type.event
