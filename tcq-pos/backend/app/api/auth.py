@@ -35,6 +35,16 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)):
     )
     db.add(user)
     await db.flush()
+
+    # Associate existing tickets with this email
+    from app.models.ticket import Ticket
+    from sqlalchemy import update
+    await db.execute(
+        update(Ticket)
+        .where(Ticket.purchaser_email == data.email.lower().strip())
+        .values(user_id=user.id)
+    )
+
     return user
 
 

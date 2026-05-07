@@ -23,6 +23,11 @@ export default function App() {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ full_name: '', email: '', password: '' });
   
+  // App View
+  const [activeTab, setActiveTab] = useState('wallet'); // 'wallet', 'tickets'
+  const [tickets, setTickets] = useState([]);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  
   // Modals & PWA
   const [showLoadModal, setShowLoadModal] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
@@ -80,6 +85,19 @@ export default function App() {
     }, 5000);
     return () => clearInterval(interval);
   }, [user]);
+
+  // Load Tickets
+  useEffect(() => {
+    if (user && activeTab === 'tickets') {
+      const loadTickets = async () => {
+        try {
+          const data = await api.getMyTickets();
+          setTickets(data);
+        } catch (e) { toast('Error cargando tickets', 'error'); }
+      };
+      loadTickets();
+    }
+  }, [user, activeTab, toast]);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -214,30 +232,78 @@ export default function App() {
             <div className="balance-label">Saldo Disponible</div>
             <div className="balance-amount">${user.tcq_balance.toLocaleString('es-AR')}</div>
           </div>
-          
-          <div className="qr-section">
-            <p style={{ marginBottom: 'var(--space-lg)', color: 'var(--brand-primary-light)', fontWeight: 600 }}>
-              Mostrá este QR en la barra
-            </p>
-            <div className="qr-wrapper">
-              <QRCodeSVG value={user.qr_code} size={250} />
-            </div>
-            <p className="qr-instruction">
-              El barman escaneará tu código para descontar el saldo.
-            </p>
-          </div>
 
-          <div className="actions-grid" style={{ marginTop: 'var(--space-md)' }}>
-            <button className="action-btn" onClick={() => setShowLoadModal(true)}>
-              💳 Cargar Saldo
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: 'var(--space-md)' }}>
+            <button 
+              className={`btn ${activeTab === 'wallet' ? 'btn-primary' : 'btn-ghost'}`} 
+              onClick={() => setActiveTab('wallet')}
+              style={{ flex: 1 }}
+            >
+              💳 Mi Saldo
+            </button>
+            <button 
+              className={`btn ${activeTab === 'tickets' ? 'btn-primary' : 'btn-ghost'}`} 
+              onClick={() => setActiveTab('tickets')}
+              style={{ flex: 1 }}
+            >
+              🎟️ Mis Entradas
             </button>
           </div>
+          
+          {activeTab === 'wallet' ? (
+            <>
+              <div className="qr-section">
+                <p style={{ marginBottom: 'var(--space-lg)', color: 'var(--brand-primary-light)', fontWeight: 600 }}>
+                  Mostrá este QR en la barra
+                </p>
+                <div className="qr-wrapper">
+                  <QRCodeSVG value={user.qr_code} size={250} />
+                </div>
+                <p className="qr-instruction">
+                  El barman escaneará tu código para descontar el saldo.
+                </p>
+              </div>
+
+              <div className="actions-grid" style={{ marginTop: 'var(--space-md)' }}>
+                <button className="action-btn" onClick={() => setShowLoadModal(true)}>
+                  💳 Cargar Saldo
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="tickets-section">
+              <h3 style={{ marginBottom: 'var(--space-md)' }}>Tus Entradas</h3>
+              {tickets.length === 0 ? (
+                <div className="banner-card" style={{ textAlign: 'center', display: 'block', padding: '2rem' }}>
+                  <p style={{ marginBottom: '1rem' }}>No tenés entradas vigentes.</p>
+                  <a href="https://tcqlub.com/events" target="_blank" rel="noopener noreferrer" className="btn btn-primary">Ver Eventos</a>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {tickets.map(ticket => (
+                    <div 
+                      key={ticket.id} 
+                      className="banner-card" 
+                      style={{ cursor: 'pointer', flexDirection: 'column', alignItems: 'flex-start' }}
+                      onClick={() => setSelectedTicket(ticket)}
+                    >
+                      <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h4 style={{ margin: 0 }}>Ticket #{ticket.qr_code.substring(0, 8)}</h4>
+                        <span className="badge" style={{ background: 'var(--success)', color: '#fff' }}>VÁLIDO</span>
+                      </div>
+                      <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', opacity: 0.7 }}>Toca para ver el QR</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="banners-section">
-            <a href="https://venti.com.ar/" target="_blank" rel="noopener noreferrer" className="banner-card">
+            <a href="https://tcqlub.com/events" target="_blank" rel="noopener noreferrer" className="banner-card">
               <div className="banner-content">
-                <h4>🎟️ Entradas en Venti</h4>
-                <p>Comprá tus tickets para próximos eventos</p>
+                <h4>🎟️ Próximos Eventos</h4>
+                <p>Comprá tus tickets en nuestra web oficial</p>
               </div>
               <span style={{ fontSize: '1.2rem' }}>→</span>
             </a>
@@ -250,6 +316,25 @@ export default function App() {
               <span style={{ fontSize: '1.2rem' }}>→</span>
             </a>
           </div>
+
+          {/* Ticket QR Modal */}
+          {selectedTicket && (
+            <div className="modal-overlay" onClick={() => setSelectedTicket(null)}>
+              <div className="modal" onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
+                <h3 className="modal-title">Tu Entrada QR</h3>
+                <p className="modal-text" style={{ marginBottom: '1.5rem' }}>
+                  Mostrá este código en la puerta del evento.
+                </p>
+                <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px', display: 'inline-block', marginBottom: '1.5rem' }}>
+                  <QRCodeSVG value={selectedTicket.qr_code} size={220} />
+                </div>
+                <p style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{selectedTicket.qr_code}</p>
+                <button className="btn btn-ghost" style={{ marginTop: '1rem' }} onClick={() => setSelectedTicket(null)}>
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Load Balance Modal */}
           {showLoadModal && (

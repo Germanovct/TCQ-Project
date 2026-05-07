@@ -58,7 +58,7 @@ export default function Events() {
           // Redirigir a MercadoPago
           window.location.href = data.init_point;
         } else {
-          alert(data.message || "¡Entrada generada con éxito!");
+          alert("¡MUCHAS GRACIAS POR TU COMPRA!\n\nSi no podés descargar por aquí tu ticket, te lo enviamos por email o podés descargarte nuestra Wallet TCQ, donde vas a poder ver tus tickets y tener muchos beneficios más.");
           setSelectedEvent(null);
           setSelectedTicket("");
         }

@@ -38,6 +38,7 @@ class ApiClient {
   login(email, password) { return this.request('POST', '/auth/login', { email, password }); }
   getMe() { return this.request('GET', '/auth/me'); }
   getBalance() { return this.request('GET', '/auth/balance'); }
+  getMyTickets() { return this.request('GET', '/tickets/my-tickets'); }
 }
 
 export default new ApiClient();

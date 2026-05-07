@@ -13,6 +13,8 @@ from app.models.event import Event
 from app.schemas.ticket import TicketPurchaseRequest, TicketPurchaseResponse, TicketResponse
 from app.services.mercadopago_service import mp_service
 from app.api.dashboard import broadcast_event
+from app.utils.security import get_current_user
+from app.models.user import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Tickets"])
@@ -46,6 +48,14 @@ async def purchase_ticket(req: TicketPurchaseRequest, db: AsyncSession = Depends
         purchaser_email=req.email,
         status="valid" if is_free else "pending_payment"
     )
+    
+    # Try to associate with existing user
+    from app.models.user import User
+    user_result = await db.execute(select(User).where(User.email == req.email.lower()))
+    existing_user = user_result.scalar_one_or_none()
+    if existing_user:
+        new_ticket.user_id = existing_user.id
+        
     db.add(new_ticket)
     
     # 3. Handle Free Ticket
@@ -96,6 +106,22 @@ async def get_ticket(ticket_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket no encontrado")
     return ticket
+
+@router.get("/tickets/my-tickets", response_model=list[TicketResponse])
+async def get_my_tickets(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all tickets associated with the logged-in user.
+    """
+    query = select(Ticket).filter(
+        Ticket.user_id == current_user.id,
+        Ticket.status.in_(["valid", "used"])
+    ).order_by(Ticket.created_at.desc())
+    
+    result = await db.execute(query)
+    return result.scalars().all()
 
 async def send_ticket_email(email: str, ticket: Ticket, event: Event):
     """
