@@ -25,6 +25,7 @@ export default function EventManager({ onClose, toast }) {
       // Check if the event belongs to our currently selected event
       if (data.event_id === selectedEvent.id || data.ticket_id) {
         loadEventStats(selectedEvent.id);
+        loadEventAttendees(selectedEvent.id);
         
         // Add to activity feed
         setActivityFeed(prev => [{
