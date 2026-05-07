@@ -90,4 +90,54 @@ class MercadoPagoService:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    async def create_checkout_preference(self, purchase_id: str, items: list, payer_email: str) -> dict:
+        """Create a preference for MercadoPago Checkout Pro (online purchases)."""
+        if not self.access_token:
+            return {"success": False, "error": "MP not configured"}
+            
+        try:
+            mp_items = [{
+                "title": i["title"],
+                "quantity": i["quantity"],
+                "unit_price": float(i["unit_price"]),
+                "currency_id": "ARS"
+            } for i in items]
+            
+            payload = {
+                "items": mp_items,
+                "payer": {"email": payer_email},
+                "back_urls": {
+                    "success": "https://tcqlub.com/tickets/success",
+                    "failure": "https://tcqlub.com/tickets/failure",
+                    "pending": "https://tcqlub.com/tickets/pending"
+                },
+                "auto_return": "approved",
+                "external_reference": str(purchase_id),
+                "notification_url": "https://tcq-project.onrender.com/api/v1/webhooks/mercadopago/ticket",
+            }
+            
+            headers = {
+                "Authorization": f"Bearer {self.access_token}",
+                "Content-Type": "application/json"
+            }
+            
+            async with httpx.AsyncClient() as client:
+                res = await client.post("https://api.mercadopago.com/checkout/preferences", json=payload, headers=headers)
+                
+            if res.status_code in (200, 201):
+                resp = res.json()
+                return {
+                    "success": True,
+                    "preference_id": resp.get("id"),
+                    "init_point": resp.get("init_point"),
+                    "sandbox_init_point": resp.get("sandbox_init_point")
+                }
+            else:
+                logger.error(f"❌ MP Checkout Pro failed: {res.status_code} - {res.text}")
+                return {"success": False, "error": f"MP Error: {res.text}"}
+                
+        except Exception as e:
+            logger.error(f"❌ MP preference failed: {e}")
+            return {"success": False, "error": str(e)}
+
 mp_service = MercadoPagoService()
