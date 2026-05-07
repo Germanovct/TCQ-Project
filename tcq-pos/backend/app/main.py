@@ -4,7 +4,8 @@ Initializes the app, mounts all routers, and sets up middleware.
 """
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import os
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,7 +22,7 @@ from app.api.dashboard import router as dashboard_router
 from app.api.dj import router as dj_router
 from app.api.events import router as events_router
 from app.api.tickets import router as tickets_router
-from migrate import migrate
+from .migrate import migrate
 
 settings = get_settings()
 
@@ -87,6 +88,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Global Exception Handler to avoid raw 500s breaking CORS
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"❌ UNHANDLED ERROR: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error", "message": str(exc)},
+    )
 
 # Mount static files
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

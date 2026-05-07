@@ -1,7 +1,7 @@
 import asyncio
 import os
 from sqlalchemy import text
-from app.database import engine
+from .database import engine
 
 async def migrate():
     print("🚀 Starting database migration...")
