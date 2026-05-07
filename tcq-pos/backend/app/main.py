@@ -60,7 +60,12 @@ app.add_middleware(
         "http://localhost:5173",             # Frontend local de Vite
         "http://localhost:4173",             # Vite preview
         "https://tcq-project.onrender.com",  # Backend en producción
-        "https://tcq-pos.netlify.app"        # Frontend en producción
+        "https://tcq-pos.netlify.app",       # Frontend en producción original
+        "https://tcqlub.com",                # Dominios Custom
+        "https://www.tcqlub.com",
+        "https://pos.tcqlub.com",
+        "https://client.tcqlub.com",
+        "https://wallet.tcqlub.com"
     ],
     allow_credentials=True,
     allow_methods=["*"],
