@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
+import shutil
+import os
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -96,4 +99,23 @@ async def delete_event(event_id: UUID, db: AsyncSession = Depends(get_db)):
     event.is_active = False
     await db.commit()
     return {"success": True, "message": "Evento eliminado correctamente"}
+
+@router.post("/events/upload-flyer")
+async def upload_flyer(file: UploadFile = File(...)):
+    UPLOAD_DIR = "uploads"
+    if not os.path.exists(UPLOAD_DIR):
+        os.makedirs(UPLOAD_DIR)
+        
+    file_ext = os.path.splitext(file.filename)[1]
+    file_name = f"{uuid.uuid4()}{file_ext}"
+    file_path = os.path.join(UPLOAD_DIR, file_name)
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    # In production with Render, this URL depends on the domain
+    # For now, return a path that the POS can use to display and save
+    # We use a relative path /uploads/ since it's mounted in main.py
+    url = f"https://tcq-project.onrender.com/uploads/{file_name}"
+    return {"url": url}
 

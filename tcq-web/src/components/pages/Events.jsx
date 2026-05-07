@@ -12,7 +12,6 @@ export default function Events() {
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
-    age: "",
     email: ""
   });
   const [purchasing, setPurchasing] = useState(false);
@@ -47,7 +46,6 @@ export default function Events() {
           ticket_type_id: selectedTicket,
           first_name: formData.first_name,
           last_name: formData.last_name,
-          age: parseInt(formData.age),
           email: formData.email
         })
       });
@@ -55,9 +53,15 @@ export default function Events() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Error en la compra");
       
-      if (data.success && data.init_point) {
-        // Redirigir a MercadoPago
-        window.location.href = data.init_point;
+      if (data.success) {
+        if (data.init_point) {
+          // Redirigir a MercadoPago
+          window.location.href = data.init_point;
+        } else {
+          alert(data.message || "¡Entrada generada con éxito!");
+          setSelectedEvent(null);
+          setSelectedTicket("");
+        }
       } else {
         alert(data.message || "Error al procesar el pago");
       }
@@ -152,6 +156,7 @@ export default function Events() {
                     <form onSubmit={handleBuyTicket}>
                       <div className="mb-4">
                         <label className="form-label text-white-50 fw-bold">1. Selecciona tu Ticket</label>
+                        <div className="text-info small mb-2"><i className="bi bi-exclamation-triangle me-1"></i> Evento exclusivo para mayores de 18 años.</div>
                         <div className="d-flex flex-column gap-2">
                           {selectedEvent.ticket_types && selectedEvent.ticket_types.length > 0 ? (
                             selectedEvent.ticket_types.map(tt => (
@@ -205,10 +210,6 @@ export default function Events() {
                               <input type="email" className="form-control bg-dark text-white border-secondary" placeholder="Correo Electrónico (Aquí enviaremos tu QR)" required 
                                 value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                             </div>
-                            <div className="col-sm-4">
-                              <input type="number" className="form-control bg-dark text-white border-secondary" placeholder="Edad" required min="18"
-                                value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} />
-                            </div>
                           </div>
                           
                           <button 
@@ -217,9 +218,11 @@ export default function Events() {
                             disabled={purchasing}
                           >
                             {purchasing ? (
-                              <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Redirigiendo a Mercado Pago...</>
+                              <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Procesando...</>
                             ) : (
-                              "Pagar con Mercado Pago"
+                              selectedEvent.ticket_types.find(t => t.id === selectedTicket)?.price == 0 
+                              ? "Descargar Entrada Gratis" 
+                              : "Pagar con Mercado Pago"
                             )}
                           </button>
                         </div>

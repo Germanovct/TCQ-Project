@@ -7,7 +7,6 @@ class TicketPurchaseRequest(BaseModel):
     ticket_type_id: UUID
     first_name: str
     last_name: str
-    age: int
     email: EmailStr
 
 class TicketPurchaseResponse(BaseModel):

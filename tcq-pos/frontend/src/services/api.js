@@ -100,6 +100,16 @@ class ApiService {
   getEventStats(eventId) { return this.request('GET', `/events/${eventId}/stats`); }
   createEvent(data) { return this.request('POST', '/events', data); }
   deleteEvent(eventId) { return this.request('DELETE', `/events/${eventId}`); }
+  async uploadFlyer(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${this.baseURL}/events/upload-flyer`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${this.token}` },
+      body: formData
+    });
+    return res.json();
+  }
   createTicketType(eventId, data) { return this.request('POST', `/events/${eventId}/ticket-types`, data); }
 }
 

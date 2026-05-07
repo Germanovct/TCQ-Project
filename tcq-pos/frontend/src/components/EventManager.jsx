@@ -91,6 +91,24 @@ export default function EventManager({ onClose, toast }) {
     }
   };
 
+  const handleFlyerUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setLoading(true);
+    try {
+      const res = await api.uploadFlyer(file);
+      if (res.url) {
+        setEventForm({ ...eventForm, flyer_url: res.url });
+        toast('Flyer subido correctamente');
+      }
+    } catch (e) {
+      toast('Error subiendo imagen', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteEvent = async (eventId) => {
     if (!window.confirm('¿Estás seguro de eliminar este evento? Esta acción no se puede deshacer y el evento dejará de ser público.')) return;
     
@@ -262,9 +280,16 @@ export default function EventManager({ onClose, toast }) {
                     <textarea className="input" rows="4" placeholder="Line up, dress code, etc..." value={eventForm.description} onChange={e => setEventForm({...eventForm, description: e.target.value})} style={{ width: '100%', padding: '0.8rem', resize: 'vertical' }} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Flyer (URL de la imagen)</label>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                      <input className="input" type="url" placeholder="https://imgur.com/tu-flyer.jpg" value={eventForm.flyer_url} onChange={e => setEventForm({...eventForm, flyer_url: e.target.value})} style={{ flex: 1, padding: '0.8rem' }} />
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Flyer (Imagen del evento)</label>
+                    <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+                      <input 
+                        className="input" 
+                        type="file" 
+                        accept="image/*"
+                        onChange={handleFlyerUpload} 
+                        style={{ width: '100%', padding: '0.8rem', background: 'var(--bg-surface)' }} 
+                      />
+                      {loading && <div style={{ fontSize: '0.8rem', color: 'var(--brand-primary-light)' }}>Subiendo imagen...</div>}
                     </div>
                     {eventForm.flyer_url && <img src={eventForm.flyer_url} alt="Preview" style={{ marginTop: '1rem', height: '160px', borderRadius: '12px', objectFit: 'cover', border: '1px solid var(--border-subtle)' }} />}
                   </div>

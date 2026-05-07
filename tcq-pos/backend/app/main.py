@@ -5,6 +5,8 @@ Initializes the app, mounts all routers, and sets up middleware.
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+import os
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.database import init_db
@@ -43,6 +45,11 @@ async def lifespan(app: FastAPI):
     logger.info("👋 Shutting down TCQ POS System...")
 
 
+# Create uploads directory
+UPLOAD_DIR = "uploads"
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
+
 app = FastAPI(
     title="TCQ POS API",
     description=(
@@ -72,6 +79,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Mount routers
 app.include_router(auth_router, prefix="/api/v1")

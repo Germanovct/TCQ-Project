@@ -34,23 +34,40 @@ async def purchase_ticket(req: TicketPurchaseRequest, db: AsyncSession = Depends
     if ticket_type.stock <= 0:
         raise HTTPException(status_code=400, detail="Entradas agotadas para este tipo de ticket.")
         
-    if req.age < 18:
-        raise HTTPException(status_code=400, detail="Debes ser mayor de 18 años para comprar entradas.")
-        
-    # 2. Create Pending Ticket
+    # 2. Create Ticket
+    is_free = float(ticket_type.price) == 0
     new_ticket = Ticket(
         id=uuid.uuid4(),
         ticket_type_id=ticket_type.id,
         event_id=event.id,
         purchaser_first_name=req.first_name,
         purchaser_last_name=req.last_name,
-        purchaser_age=req.age,
+        purchaser_age=18, # Default since we removed it from form
         purchaser_email=req.email,
-        status="pending_payment"
+        status="valid" if is_free else "pending_payment"
     )
     db.add(new_ticket)
     
-    # 3. Generate MercadoPago Checkout Pro Preference
+    # 3. Handle Free Ticket
+    if is_free:
+        if ticket_type.stock > 0:
+            ticket_type.stock -= 1
+        await db.commit()
+        await broadcast_event({
+            "event": "ticket_sold",
+            "ticket_id": str(new_ticket.id),
+            "event_id": str(new_ticket.event_id),
+            "ticket_type_id": str(new_ticket.ticket_type_id),
+            "message": f"🎟️ Nueva cortesía generada: {ticket_type.name}"
+        })
+        await send_ticket_email(req.email, new_ticket, event)
+        return TicketPurchaseResponse(
+            success=True,
+            ticket_id=str(new_ticket.id),
+            message="¡Entrada gratuita generada con éxito! Revisa tu email."
+        )
+
+    # 4. Generate MercadoPago Checkout Pro Preference (for paid tickets)
     items = [{
         "title": f"Entrada: {event.title} - {ticket_type.name}",
         "quantity": 1,
