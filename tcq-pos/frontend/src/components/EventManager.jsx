@@ -13,9 +13,6 @@ export default function EventManager({ onClose, toast }) {
   const [attendees, setAttendees] = useState([]);
   const [attendeeSearch, setAttendeeSearch] = useState('');
   const [detailsTab, setDetailsTab] = useState('tickets'); // 'tickets', 'attendees'
-  const [attendees, setAttendees] = useState([]);
-  const [attendeeSearch, setAttendeeSearch] = useState('');
-  const [detailsTab, setDetailsTab] = useState('tickets'); // 'tickets', 'attendees'
 
   // ── WebSocket for Real-time Event Updates ──
   const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

@@ -17,6 +17,7 @@ from app.models.event import Event
 from app.models.ticket_type import TicketType
 from app.models.ticket import Ticket
 from app.schemas.event import EventCreate, EventResponse, TicketTypeCreate, TicketTypeResponse, TicketStats
+from app.schemas.ticket import TicketResponse
 
 router = APIRouter(tags=["Events"])
 
