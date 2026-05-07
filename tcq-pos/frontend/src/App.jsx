@@ -900,8 +900,6 @@ export default function App() {
             onShowDJ={() => setShowDJ(true)}
             onShowEvents={() => setShowEvents(true)}
           />
-
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {view === 'tables' ? (
             <>
               <div className="section-header">
@@ -941,7 +939,6 @@ export default function App() {
           mobileOpen={mobileCartOpen}
           onClose={() => setMobileCartOpen(false)}
         />
-        </div>
       </div>
     </>
   );
