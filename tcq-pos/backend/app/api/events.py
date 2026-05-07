@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
-import shutil
 import os
 import uuid
+import cloudinary
+import cloudinary.uploader
+from app.config import get_settings
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -102,20 +104,36 @@ async def delete_event(event_id: UUID, db: AsyncSession = Depends(get_db)):
 
 @router.post("/events/upload-flyer")
 async def upload_flyer(file: UploadFile = File(...)):
-    UPLOAD_DIR = "uploads"
-    if not os.path.exists(UPLOAD_DIR):
-        os.makedirs(UPLOAD_DIR)
-        
-    file_ext = os.path.splitext(file.filename)[1]
-    file_name = f"{uuid.uuid4()}{file_ext}"
-    file_path = os.path.join(UPLOAD_DIR, file_name)
+    settings = get_settings()
     
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    # Configure Cloudinary
+    if not settings.CLOUDINARY_URL:
+        # Fallback to local if not configured (not recommended for production)
+        UPLOAD_DIR = "uploads"
+        if not os.path.exists(UPLOAD_DIR):
+            os.makedirs(UPLOAD_DIR)
+        file_ext = os.path.splitext(file.filename)[1]
+        file_name = f"{uuid.uuid4()}{file_ext}"
+        file_path = os.path.join(UPLOAD_DIR, file_name)
+        with open(file_path, "wb") as buffer:
+            import shutil
+            shutil.copyfileobj(file.file, buffer)
+        url = f"https://tcq-project.onrender.com/uploads/{file_name}"
+        return {"url": url}
+
+    try:
+        # Upload to Cloudinary
+        # We can use the CLOUDINARY_URL from settings directly if we want, 
+        # but cloudinary.config also works with the individual parts or the URL.
+        cloudinary.config(cloudinary_url=settings.CLOUDINARY_URL)
         
-    # In production with Render, this URL depends on the domain
-    # For now, return a path that the POS can use to display and save
-    # We use a relative path /uploads/ since it's mounted in main.py
-    url = f"https://tcq-project.onrender.com/uploads/{file_name}"
-    return {"url": url}
+        upload_result = cloudinary.uploader.upload(
+            file.file,
+            folder="tcq-events",
+            resource_type="auto"
+        )
+        
+        return {"url": upload_result.get("secure_url")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al subir imagen a Cloudinary: {str(e)}")
 

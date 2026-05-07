@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     # Mercado Pago
     MP_ACCESS_TOKEN: str = ""
     MP_WEBHOOK_SECRET: str = ""
+    
+    # Cloudinary
+    CLOUDINARY_URL: str = ""
 
     # AFIP (ARCA)
     AFIP_CUIT: int = 20383511535
