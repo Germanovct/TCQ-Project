@@ -227,7 +227,10 @@ body {
 
 .topbar-actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--space-sm);
+  flex: 1;
 }
 
 /* ── Live Clock ── */
@@ -367,10 +370,12 @@ body {
 /* ── Tables Grid ── */
 .tables-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: var(--space-md);
   overflow-y: auto;
   padding-bottom: var(--space-md);
+  flex: 1;
+  align-content: start;
 }
 
 .table-card {
@@ -483,6 +488,7 @@ body {
   overflow-y: auto;
   padding-bottom: var(--space-md);
   flex: 1;
+  align-content: start;
 }
 
 .product-card {
