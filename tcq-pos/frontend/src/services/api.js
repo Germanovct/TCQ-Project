@@ -98,6 +98,7 @@ class ApiService {
   // Events
   getEvents() { return this.request('GET', '/events'); }
   getEventStats(eventId) { return this.request('GET', `/events/${eventId}/stats`); }
+  getEventAttendees(eventId) { return this.request('GET', `/events/${eventId}/attendees`); }
   createEvent(data) { return this.request('POST', '/events', data); }
   deleteEvent(eventId) { return this.request('DELETE', `/events/${eventId}`); }
   async uploadFlyer(file) {
@@ -111,6 +112,7 @@ class ApiService {
     return res.json();
   }
   createTicketType(eventId, data) { return this.request('POST', `/events/${eventId}/ticket-types`, data); }
+  updateTicketType(ttId, data) { return this.request('PUT', `/events/ticket-types/${ttId}`, data); }
   
   // Tickets Validation
   validateTicket(qrCode) { return this.request('POST', '/tickets/validate', { qr_code: qrCode }); }

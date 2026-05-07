@@ -60,6 +60,35 @@ async def create_ticket_type(event_id: UUID, ticket_in: TicketTypeCreate, db: As
     await db.refresh(new_tt)
     return new_tt
 
+@router.put("/events/ticket-types/{tt_id}", response_model=TicketTypeResponse)
+async def update_ticket_type(tt_id: UUID, ticket_in: TicketTypeCreate, db: AsyncSession = Depends(get_db)):
+    tt = await db.get(TicketType, tt_id)
+    if not tt:
+        raise HTTPException(status_code=404, detail="Ticket type not found")
+    
+    # Update fields
+    for key, value in ticket_in.model_dump().items():
+        setattr(tt, key, value)
+    
+    await db.commit()
+    await db.refresh(tt)
+    return tt
+
+@router.get("/events/{event_id}/attendees", response_model=List[TicketResponse])
+async def get_event_attendees(event_id: UUID, db: AsyncSession = Depends(get_db)):
+    query = (
+        select(Ticket)
+        .options(selectinload(Ticket.ticket_type))
+        .filter(Ticket.event_id == event_id)
+        .order_by(Ticket.created_at.desc())
+    )
+    result = await db.execute(query)
+    tickets = result.scalars().all()
+    
+    # Map to TicketResponse manually to ensure relations are flat if needed
+    # (Though TicketResponse schema should handle it if Config.from_attributes is True)
+    return tickets
+
 @router.get("/events/{event_id}/stats", response_model=List[TicketStats])
 async def get_event_stats(event_id: UUID, db: AsyncSession = Depends(get_db)):
     event = await db.get(Event, event_id)

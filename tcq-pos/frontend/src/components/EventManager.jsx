@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 export default function EventManager({ onClose, toast }) {
   const [activeTab, setActiveTab] = useState('list'); // 'list', 'create', 'details'
@@ -7,6 +8,39 @@ export default function EventManager({ onClose, toast }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [activityFeed, setActivityFeed] = useState([]);
+  const [editingTicketId, setEditingTicketId] = useState(null);
+  const [attendees, setAttendees] = useState([]);
+  const [attendeeSearch, setAttendeeSearch] = useState('');
+  const [detailsTab, setDetailsTab] = useState('tickets'); // 'tickets', 'attendees'
+  const [attendees, setAttendees] = useState([]);
+  const [attendeeSearch, setAttendeeSearch] = useState('');
+  const [detailsTab, setDetailsTab] = useState('tickets'); // 'tickets', 'attendees'
+
+  // ── WebSocket for Real-time Event Updates ──
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const defaultWsHost = window.location.hostname === 'localhost' ? 'localhost:8000' : 'tcq-project.onrender.com';
+  const wsUrl = import.meta.env.VITE_WS_URL || `${wsProtocol}//${defaultWsHost}/api/v1/dashboard/ws`;
+  
+  const handleWsMessage = useCallback((data) => {
+    // If it's a ticket event and we have a selected event
+    if ((data.event === 'ticket_sold' || data.event === 'ticket_validated') && selectedEvent) {
+      // Check if the event belongs to our currently selected event
+      if (data.event_id === selectedEvent.id || data.ticket_id) {
+        loadEventStats(selectedEvent.id);
+        
+        // Add to activity feed
+        setActivityFeed(prev => [{
+          id: Date.now(),
+          type: data.event,
+          message: data.message,
+          time: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        }, ...prev].slice(0, 10)); // Keep only last 10
+      }
+    }
+  }, [selectedEvent]);
+
+  const { connected: wsConnected } = useWebSocket(wsUrl, handleWsMessage);
 
   // Form states for creating Event
   const [eventForm, setEventForm] = useState({
@@ -49,19 +83,22 @@ export default function EventManager({ onClose, toast }) {
     }
   };
 
-  const loadEventStats = async (eventId) => {
+  const loadEventAttendees = async (eventId) => {
     try {
-      const data = await api.getEventStats(eventId);
-      setStats(data);
+      const data = await api.getEventAttendees(eventId);
+      setAttendees(data);
     } catch (e) {
-      toast('Error cargando estadísticas', 'error');
+      toast('Error cargando asistentes', 'error');
     }
   };
 
   const handleSelectEvent = (ev) => {
     setSelectedEvent(ev);
+    setActivityFeed([]); // Reset feed for new event
     setActiveTab('details');
+    setDetailsTab('tickets'); // Default sub-tab
     loadEventStats(ev.id);
+    loadEventAttendees(ev.id);
   };
 
   const handleCreateEvent = async (e) => {
@@ -142,16 +179,41 @@ export default function EventManager({ onClose, toast }) {
         entry_limit_time: ticketForm.entry_limit_time ? new Date(ticketForm.entry_limit_time).toISOString() : null,
       };
 
-      await api.createTicketType(selectedEvent.id, payload);
-      toast('Ticket creado exitosamente');
+      if (editingTicketId) {
+        await api.updateTicketType(editingTicketId, payload);
+        toast('Ticket actualizado');
+      } else {
+        await api.createTicketType(selectedEvent.id, payload);
+        toast('Ticket creado exitosamente');
+      }
+      
       setShowTicketForm(false);
+      setEditingTicketId(null);
       setTicketForm({ category: 'standard', name: '', description: '', price: '', stock: '', state: 'on_sale', is_visible: true, is_transferable: true, access_count: 1, entry_limit_time: '', discount_code: '' });
       loadEventStats(selectedEvent.id);
     } catch (e) {
-      toast(e.message || 'Error creando ticket', 'error');
+      toast(e.message || 'Error guardando ticket', 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditTicket = (tt) => {
+    setEditingTicketId(tt.ticket_type_id);
+    setTicketForm({
+      category: tt.category || 'standard',
+      name: tt.name,
+      description: tt.description || '',
+      price: tt.price,
+      stock: tt.stock,
+      state: tt.state,
+      is_visible: tt.is_visible ?? true,
+      is_transferable: tt.is_transferable ?? true,
+      access_count: tt.access_count || 1,
+      entry_limit_time: tt.entry_limit_time ? new Date(tt.entry_limit_time).toISOString().slice(0, 16) : '',
+      discount_code: tt.discount_code || ''
+    });
+    setShowTicketForm(true);
   };
 
   return (
@@ -378,11 +440,12 @@ export default function EventManager({ onClose, toast }) {
 
               {/* Stats Overview */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                <div style={{ background: 'var(--bg-elevated)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ background: 'var(--bg-elevated)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-subtle)', position: 'relative' }}>
                   <div style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>Tickets Totales Vendidos</div>
                   <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--brand-primary-light)' }}>
                     {stats.reduce((acc, st) => acc + st.sold, 0)}
                   </div>
+                  {wsConnected && <div style={{ position: 'absolute', top: '1rem', right: '1rem', fontSize: '0.7rem', color: 'var(--success)' }}>● Live</div>}
                 </div>
                 <div style={{ background: 'var(--bg-elevated)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
                   <div style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>Recaudación Bruta (Est.)</div>
@@ -398,10 +461,63 @@ export default function EventManager({ onClose, toast }) {
                 </div>
               </div>
 
-              {/* Tickets Configuration Area */}
+              {/* Real-time Activity Feed */}
+              {activityFeed.length > 0 && (
+                <div style={{ background: 'rgba(6, 214, 160, 0.05)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(6, 214, 160, 0.2)' }}>
+                  <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: 'var(--brand-accent)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    📡 Actividad en Tiempo Real
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {activityFeed.map(item => (
+                      <div key={item.id} style={{ 
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                        padding: '0.6rem 1rem', background: 'var(--bg-surface)', borderRadius: '8px',
+                        borderLeft: `4px solid ${item.type === 'ticket_sold' ? 'var(--brand-primary)' : 'var(--brand-accent)'}`,
+                        animation: 'slideIn 0.3s ease-out'
+                      }}>
+                        <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{item.message}</span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Sub-Tabs: Tickets vs Attendees */}
+              <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
+                <button 
+                  onClick={() => setDetailsTab('tickets')}
+                  style={{
+                    padding: '0.8rem 1.5rem', border: 'none', background: 'none', cursor: 'pointer',
+                    color: detailsTab === 'tickets' ? 'var(--brand-primary-light)' : 'var(--text-muted)',
+                    borderBottom: detailsTab === 'tickets' ? '3px solid var(--brand-primary-light)' : 'none',
+                    fontWeight: 700, fontSize: '1rem', transition: 'all 0.2s'
+                  }}
+                >
+                  ⚙️ Configuración
+                </button>
+                <button 
+                  onClick={() => { setDetailsTab('attendees'); loadEventAttendees(selectedEvent.id); }}
+                  style={{
+                    padding: '0.8rem 1.5rem', border: 'none', background: 'none', cursor: 'pointer',
+                    color: detailsTab === 'attendees' ? 'var(--brand-primary-light)' : 'var(--text-muted)',
+                    borderBottom: detailsTab === 'attendees' ? '3px solid var(--brand-primary-light)' : 'none',
+                    fontWeight: 700, fontSize: '1rem', transition: 'all 0.2s'
+                  }}
+                >
+                  📋 Lista de Asistentes
+                </button>
+              </div>
+
+              {detailsTab === 'tickets' && (
+                <>
+                  {/* Tickets Configuration Area */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
                 <h2 style={{ margin: 0, fontSize: '1.8rem' }}>Tipos de Tickets</h2>
-                <button className={`btn ${showTicketForm ? 'btn-danger' : 'btn-success'}`} onClick={() => setShowTicketForm(!showTicketForm)}>
+                <button className={`btn ${showTicketForm ? 'btn-danger' : 'btn-success'}`} onClick={() => {
+                  setShowTicketForm(!showTicketForm);
+                  if (showTicketForm) { setEditingTicketId(null); setTicketForm({ category: 'standard', name: '', description: '', price: '', stock: '', state: 'on_sale', is_visible: true, is_transferable: true, access_count: 1, entry_limit_time: '', discount_code: '' }); }
+                }}>
                   {showTicketForm ? '✕ Cancelar' : '+ Nuevo Ticket'}
                 </button>
               </div>
@@ -413,7 +529,9 @@ export default function EventManager({ onClose, toast }) {
                   border: '1px solid var(--brand-accent)', display: 'flex', flexDirection: 'column', gap: '1.5rem',
                   boxShadow: '0 0 20px rgba(6, 214, 160, 0.1)'
                 }}>
-                  <h3 style={{ margin: 0, color: 'var(--brand-primary-light)' }}>Configuración de Entrada</h3>
+                  <h3 style={{ margin: 0, color: 'var(--brand-primary-light)' }}>
+                    {editingTicketId ? `Editando: ${ticketForm.name}` : 'Configuración de Nueva Entrada'}
+                  </h3>
                   
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
                     <div>
@@ -458,7 +576,7 @@ export default function EventManager({ onClose, toast }) {
                   </div>
 
                   <button type="submit" className="btn btn-success" disabled={loading} style={{ alignSelf: 'flex-end', padding: '1rem 2rem', marginTop: '1rem' }}>
-                    {loading ? 'Guardando...' : 'Guardar y Publicar Ticket'}
+                    {loading ? 'Guardando...' : editingTicketId ? 'Actualizar Cambios' : 'Guardar y Publicar Ticket'}
                   </button>
                 </form>
               )}
@@ -499,11 +617,90 @@ export default function EventManager({ onClose, toast }) {
                           </div>
                           {progress >= 100 && <div style={{ color: 'var(--danger)', fontSize: '0.8rem', marginTop: '0.4rem', fontWeight: 600, textAlign: 'right' }}>¡AGOTADO!</div>}
                         </div>
+
+                        <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                          <button 
+                            className="btn btn-ghost" 
+                            style={{ fontSize: '0.85rem' }} 
+                            onClick={(e) => { e.stopPropagation(); handleEditTicket(st); }}
+                          >
+                            ⚙️ Editar Stock / Precio
+                          </button>
+                        </div>
                       </div>
                     );
                   })
                 )}
               </div>
+                </>
+              )}
+
+              {detailsTab === 'attendees' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <input 
+                      className="input" 
+                      type="text" 
+                      placeholder="Buscar por nombre o email..." 
+                      value={attendeeSearch}
+                      onChange={e => setAttendeeSearch(e.target.value)}
+                      style={{ flex: 1, padding: '1rem' }}
+                    />
+                    <button className="btn btn-ghost" onClick={() => loadEventAttendees(selectedEvent.id)}>🔄 Refrescar</button>
+                  </div>
+
+                  <div style={{ background: 'var(--bg-elevated)', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-subtle)' }}>
+                        <tr>
+                          <th style={{ textAlign: 'left', padding: '1rem' }}>Comprador</th>
+                          <th style={{ textAlign: 'left', padding: '1rem' }}>Tipo Ticket</th>
+                          <th style={{ textAlign: 'left', padding: '1rem' }}>Estado</th>
+                          <th style={{ textAlign: 'left', padding: '1rem' }}>Fecha Compra</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {attendees
+                          .filter(a => 
+                            a.purchaser_first_name.toLowerCase().includes(attendeeSearch.toLowerCase()) || 
+                            a.purchaser_last_name.toLowerCase().includes(attendeeSearch.toLowerCase()) || 
+                            a.purchaser_email.toLowerCase().includes(attendeeSearch.toLowerCase())
+                          )
+                          .map(a => (
+                            <tr key={a.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                              <td style={{ padding: '1rem' }}>
+                                <div style={{ fontWeight: 700 }}>{a.purchaser_first_name} {a.purchaser_last_name}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{a.purchaser_email}</div>
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                <div style={{ padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', fontSize: '0.85rem', display: 'inline-block' }}>
+                                  {a.ticket_type_name || 'Desconocido'}
+                                </div>
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                <span style={{ 
+                                  color: a.status === 'valid' ? 'var(--brand-primary-light)' : a.status === 'used' ? 'var(--success)' : 'var(--warning)',
+                                  fontWeight: 700,
+                                  fontSize: '0.85rem'
+                                }}>
+                                  {a.status === 'valid' ? '🎟️ Por Entrar' : a.status === 'used' ? '✅ En Evento' : '⏳ Pendiente'}
+                                </span>
+                                {a.used_at && <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(a.used_at).toLocaleTimeString('es-AR')}hs</div>}
+                              </td>
+                              <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                {new Date().toLocaleDateString('es-AR')}
+                              </td>
+                            </tr>
+                          ))
+                        }
+                        {attendees.length === 0 && (
+                          <tr><td colSpan="4" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Aún no hay tickets vendidos para este evento.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
 
             </div>
           )}
@@ -531,6 +728,10 @@ export default function EventManager({ onClose, toast }) {
           .desktop-modal > div:last-child {
             padding: 1rem !important;
           }
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(-10px); }
+          to { opacity: 1; transform: translateX(0); }
         }
       `}</style>
     </div>
