@@ -17,6 +17,7 @@ from app.api.terminals import router as terminals_router
 from app.api.webhooks import router as webhooks_router
 from app.api.dashboard import router as dashboard_router
 from app.api.dj import router as dj_router
+from app.api.events import router as events_router
 
 settings = get_settings()
 
@@ -74,7 +75,7 @@ app.include_router(terminals_router, prefix="/api/v1")
 app.include_router(webhooks_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(dj_router, prefix="/api/v1")
-
+app.include_router(events_router, prefix="/api/v1")
 
 @app.get("/")
 async def root():
