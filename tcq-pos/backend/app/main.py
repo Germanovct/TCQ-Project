@@ -21,6 +21,7 @@ from app.api.dashboard import router as dashboard_router
 from app.api.dj import router as dj_router
 from app.api.events import router as events_router
 from app.api.tickets import router as tickets_router
+from migrate import migrate
 
 settings = get_settings()
 
@@ -40,6 +41,13 @@ async def lifespan(app: FastAPI):
     if settings.DEBUG:
         await init_db()
         logger.info("✅ Database tables created/verified")
+    
+    # Run migrations (safe to run always as it uses IF NOT EXISTS)
+    try:
+        await migrate()
+        logger.info("✅ Migrations applied")
+    except Exception as e:
+        logger.error(f"❌ Migration failed: {e}")
     logger.info("✅ TCQ POS System ready!")
     yield
     logger.info("👋 Shutting down TCQ POS System...")
