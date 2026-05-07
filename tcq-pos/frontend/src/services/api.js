@@ -94,6 +94,12 @@ class ApiService {
     return this.request('GET', `/dj/registrations${q}`); 
   }
   djDeactivate(id) { return this.request('DELETE', `/dj/${id}`); }
+  
+  // Events
+  getEvents() { return this.request('GET', '/events'); }
+  getEventStats(eventId) { return this.request('GET', `/events/${eventId}/stats`); }
+  createEvent(data) { return this.request('POST', '/events', data); }
+  createTicketType(eventId, data) { return this.request('POST', `/events/${eventId}/ticket-types`, data); }
 }
 
 export const api = new ApiService();

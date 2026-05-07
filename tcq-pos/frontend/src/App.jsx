@@ -8,6 +8,7 @@ import PinModal from './components/PinModal';
 import TicketModal from './components/TicketModal';
 import LiveClock from './components/LiveClock';
 import DJPortal from './components/DJPortal';
+import EventManager from './components/EventManager';
 import { useWebSocket } from './hooks/useWebSocket';
 import { QRCodeSVG } from 'qrcode.react';
 import PublicTicket from './components/PublicTicket';
@@ -25,7 +26,7 @@ function Toasts({ toasts }) {
 }
 
 /* ─── Top Bar ─── */
-function TopBar({ terminal, dailyTotal, onOpenRegister, onCloseRegister, onShowReport, user, onShowTeam, onShowProducts, onShowTopUp, onLogout, wsConnected, onShowLiveRegisters, onShowDJ }) {
+function TopBar({ terminal, dailyTotal, onOpenRegister, onCloseRegister, onShowReport, user, onShowTeam, onShowProducts, onShowTopUp, onLogout, wsConnected, onShowLiveRegisters, onShowDJ, onShowEvents }) {
   const isOpen = terminal?.is_open;
   return (
     <div className="topbar">
@@ -60,6 +61,7 @@ function TopBar({ terminal, dailyTotal, onOpenRegister, onCloseRegister, onShowR
         {user?.role === 'admin' && (
           <>
             <button className="btn btn-ghost" onClick={onShowProducts}>🍔 Carta</button>
+            <button className="btn btn-ghost" onClick={onShowEvents}>🎟️ Eventos</button>
             <button className="btn btn-ghost" onClick={onShowTeam}>👥 Equipo</button>
             <button className="btn btn-ghost" onClick={onShowLiveRegisters}>📦 Cajas</button>
           </>
@@ -347,6 +349,7 @@ export default function App() {
   const [committedItems, setCommittedItems] = useState({}); // { tableId: Set of productIds committed }
   const [staleShiftWarning, setStaleShiftWarning] = useState(null);
   const [showDJ, setShowDJ] = useState(false);
+  const [showEvents, setShowEvents] = useState(false);
   const [shiftClosedData, setShiftClosedData] = useState(null);
 
   // PWA Install Modal (show once per device)
@@ -713,6 +716,7 @@ export default function App() {
       {pinModal && <PinModal itemName={pinModal.itemName} itemPrice={pinModal.itemPrice} terminalId={terminal?.id} operatorId={user?.id} onSuccess={pinModal.callback} onCancel={() => setPinModal(null)} />}
       {ticketModal && <TicketModal data={ticketModal} onClose={() => setTicketModal(null)} />}
       {showDJ && <DJPortal onClose={() => setShowDJ(false)} toast={toast} />}
+      {showEvents && <EventManager onClose={() => setShowEvents(false)} toast={toast} />}
 
       {/* Stale Shift Warning */}
       {staleShiftWarning && (
@@ -894,8 +898,10 @@ export default function App() {
             wsConnected={wsConnected}
             onShowLiveRegisters={handleShowLiveRegisters}
             onShowDJ={() => setShowDJ(true)}
+            onShowEvents={() => setShowEvents(true)}
           />
 
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {view === 'tables' ? (
             <>
               <div className="section-header">
