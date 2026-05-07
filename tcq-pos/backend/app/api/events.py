@@ -85,3 +85,15 @@ async def get_event_stats(event_id: UUID, db: AsyncSession = Depends(get_db)):
         ))
         
     return stats
+
+@router.delete("/events/{event_id}")
+async def delete_event(event_id: UUID, db: AsyncSession = Depends(get_db)):
+    event = await db.get(Event, event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    # Soft delete
+    event.is_active = False
+    await db.commit()
+    return {"success": True, "message": "Evento eliminado correctamente"}
+

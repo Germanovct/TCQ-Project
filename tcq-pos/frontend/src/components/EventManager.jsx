@@ -91,6 +91,23 @@ export default function EventManager({ onClose, toast }) {
     }
   };
 
+  const handleDeleteEvent = async (eventId) => {
+    if (!window.confirm('¿Estás seguro de eliminar este evento? Esta acción no se puede deshacer y el evento dejará de ser público.')) return;
+    
+    setLoading(true);
+    try {
+      await api.deleteEvent(eventId);
+      toast('Evento eliminado');
+      setActiveTab('list');
+      setSelectedEvent(null);
+      loadEvents();
+    } catch (e) {
+      toast('Error eliminando evento', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCreateTicketType = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -320,6 +337,17 @@ export default function EventManager({ onClose, toast }) {
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>📅 {new Date(selectedEvent.start_time).toLocaleDateString('es-AR')}</span>
                   <span>|</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>{selectedEvent.is_public ? '🟢 Público' : '🔴 Privado'}</span>
+                </div>
+                
+                <div style={{ position: 'absolute', top: '2rem', right: '2rem', display: 'flex', gap: '1rem' }}>
+                  <button 
+                    className="btn btn-danger" 
+                    onClick={() => handleDeleteEvent(selectedEvent.id)}
+                    disabled={loading}
+                    style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid var(--danger)', color: 'var(--danger)' }}
+                  >
+                    🗑️ Eliminar Evento
+                  </button>
                 </div>
               </div>
 

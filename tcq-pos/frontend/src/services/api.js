@@ -99,6 +99,7 @@ class ApiService {
   getEvents() { return this.request('GET', '/events'); }
   getEventStats(eventId) { return this.request('GET', `/events/${eventId}/stats`); }
   createEvent(data) { return this.request('POST', '/events', data); }
+  deleteEvent(eventId) { return this.request('DELETE', `/events/${eventId}`); }
   createTicketType(eventId, data) { return this.request('POST', `/events/${eventId}/ticket-types`, data); }
 }
 
