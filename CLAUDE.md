@@ -4,13 +4,13 @@
 - **Backend**: FastAPI (Python) → deployado en Render
 - **Frontend**: React (Vite) → deployado en Netlify
 - **Base de datos**: SQLite
-- **Pagos**: Mercado Pago — QR Dinámico Interoperativo (NO Checkout Pro)
+- **Pagos**: Mercado Pago — QR Dinámico Interoperativo para POS. Checkout Pro habilitado para tickets web.
 - **Realtime**: WebSocket
 
 ## Reglas críticas — NUNCA violar
 
 1. **WebSocket**: Siempre `wss://` en producción. NUNCA `ws://` en contexto HTTPS.
-2. **Mercado Pago**: Siempre usar el endpoint QR Dinámico Interoperativo. NUNCA Checkout Pro.
+2. **Mercado Pago**: Siempre usar el endpoint QR Dinámico Interoperativo para el POS. Checkout Pro se utiliza exclusivamente para la venta de tickets online en tcqlub.com.
 3. **`mercadopago_service.py`**: No deployar a Render sin confirmar que las variables de entorno están configuradas en el portal de MP primero.
 4. **Variables de entorno**: Nunca hardcodear keys ni tokens. Siempre desde `.env` local o variables de Render/Netlify.
 

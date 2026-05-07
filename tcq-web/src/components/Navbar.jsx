@@ -53,14 +53,9 @@ export default function Navbar() {
               </Link>
             </li>
             <li className="nav-item">
-              <a 
-                className="nav-link modern-link" 
-                href="https://venti.com.ar/organizadores/tcq" 
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
+              <Link className="nav-link modern-link" to="/events">
                 Tickets / Events
-              </a>
+              </Link>
             </li>
 
             {/* Botones especiales */}

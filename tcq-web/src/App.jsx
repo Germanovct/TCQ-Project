@@ -12,6 +12,7 @@ import Home from "./components/pages/Home";
 import Label from "./components/pages/Label";
 import Streaming from "./components/pages/Streaming";
 import Vinyl from "./components/pages/Vinyl";
+import Events from "./components/pages/Events";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/vinyl" element={<Vinyl />} />
         <Route path="/label" element={<Label />} />
         <Route path="/streaming" element={<Streaming />} />
+        <Route path="/events" element={<Events />} />
       </Routes>
 
       <footer className="footer-modern text-white text-center py-4">
