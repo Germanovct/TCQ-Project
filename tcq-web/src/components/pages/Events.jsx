@@ -195,33 +195,51 @@ export default function Events() {
                       </div>
 
                       {selectedTicket && (
-                        <div className="mb-4 animation-fade-in">
-                          <label className="form-label text-white-50 fw-bold">2. Tus Datos</label>
+                        <div className="mb-4 mt-5 animation-fade-in">
+                          <h4 className="text-primary mb-4 border-bottom border-secondary pb-2 text-uppercase fw-bold">2. Completá tus datos</h4>
                           <div className="row g-3">
-                            <div className="col-sm-6">
-                              <input type="text" className="form-control bg-dark text-white border-secondary" placeholder="Nombre" required 
-                                value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} />
+                            <div className="col-md-6">
+                              <div className="form-floating">
+                                <input type="text" className="form-control bg-dark text-white border-secondary" id="firstName" placeholder="Nombre" required 
+                                  value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} />
+                                <label htmlFor="firstName" className="text-white-50">Nombre</label>
+                              </div>
                             </div>
-                            <div className="col-sm-6">
-                              <input type="text" className="form-control bg-dark text-white border-secondary" placeholder="Apellido" required 
-                                value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} />
+                            <div className="col-md-6">
+                              <div className="form-floating">
+                                <input type="text" className="form-control bg-dark text-white border-secondary" id="lastName" placeholder="Apellido" required 
+                                  value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} />
+                                <label htmlFor="lastName" className="text-white-50">Apellido</label>
+                              </div>
                             </div>
                             <div className="col-12">
-                              <input type="email" className="form-control bg-dark text-white border-secondary" placeholder="Correo Electrónico (Aquí enviaremos tu QR)" required 
-                                value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                              <div className="form-floating">
+                                <input type="email" className="form-control bg-dark text-white border-secondary" id="email" placeholder="nombre@email.com" required 
+                                  value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                                <label htmlFor="email" className="text-white-50">Correo Electrónico (Aquí recibirás tu QR)</label>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="alert alert-info bg-transparent border-info text-info mt-4 d-flex align-items-center">
+                            <i className="bi bi-info-circle-fill me-3 fs-3"></i>
+                            <div className="small">
+                              <strong>Evento +18:</strong> Al continuar, confirmas que tienes la edad legal para ingresar. 
+                              Tus entradas se enviarán por email y estarán disponibles en tu <strong>Wallet TCQ</strong>.
                             </div>
                           </div>
                           
                           <button 
                             type="submit" 
-                            className="btn btn-primary w-100 mt-4 py-3 fw-bold fs-5 text-uppercase rounded-pill shadow"
+                            className="btn btn-primary w-100 mt-4 py-3 fw-bold fs-5 text-uppercase rounded-pill shadow-lg"
                             disabled={purchasing}
+                            style={{ letterSpacing: '1px' }}
                           >
                             {purchasing ? (
                               <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Procesando...</>
                             ) : (
                               selectedEvent.ticket_types.find(t => t.id === selectedTicket)?.price == 0 
-                              ? "Descargar Entrada Gratis" 
+                              ? "Obtener Entrada Gratis" 
                               : "Pagar con Mercado Pago"
                             )}
                           </button>
