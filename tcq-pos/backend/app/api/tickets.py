@@ -21,83 +21,95 @@ router = APIRouter(tags=["Tickets"])
 
 @router.post("/tickets/purchase")
 async def purchase_ticket(req: TicketPurchaseRequest, db: AsyncSession = Depends(get_db)):
-    # 1. Validate Ticket Type and Event
-    tt_query = select(TicketType).options(selectinload(TicketType.event)).filter(TicketType.id == req.ticket_type_id)
-    tt_result = await db.execute(tt_query)
-    ticket_type = tt_result.scalar_one_or_none()
-    
-    if not ticket_type or not ticket_type.is_active:
-        raise HTTPException(status_code=400, detail="El tipo de ticket no existe o no está activo.")
+    try:
+        # 1. Validate Ticket Type and Event
+        tt_query = select(TicketType).options(selectinload(TicketType.event)).filter(TicketType.id == req.ticket_type_id)
+        tt_result = await db.execute(tt_query)
+        ticket_type = tt_result.scalar_one_or_none()
         
-    event = ticket_type.event
-    if not event.is_active or not event.is_public:
-        raise HTTPException(status_code=400, detail="El evento no está disponible.")
-        
-    if ticket_type.stock <= 0:
-        raise HTTPException(status_code=400, detail="Entradas agotadas para este tipo de ticket.")
-        
-    # 2. Create Ticket
-    is_free = float(ticket_type.price) == 0
-    new_ticket = Ticket(
-        id=uuid.uuid4(),
-        ticket_type_id=ticket_type.id,
-        event_id=event.id,
-        purchaser_first_name=req.first_name,
-        purchaser_last_name=req.last_name,
-        purchaser_age=18, # Default since we removed it from form
-        purchaser_email=req.email,
-        status="valid" if is_free else "pending_payment"
-    )
-    
-    # Try to associate with existing user
-    user_result = await db.execute(select(User).where(User.email == req.email.lower()))
-    existing_user = user_result.scalar_one_or_none()
-    if existing_user:
-        new_ticket.user_id = existing_user.id
-        
-    db.add(new_ticket)
-    
-    # 3. Handle Free Ticket
-    if is_free:
-        if ticket_type.stock > 0:
-            ticket_type.stock -= 1
-        await db.commit()
-        await broadcast_event({
-            "event": "ticket_sold",
-            "ticket_id": str(new_ticket.id),
-            "event_id": str(new_ticket.event_id),
-            "ticket_type_id": str(new_ticket.ticket_type_id),
-            "message": f"🎟️ Nueva cortesía generada: {ticket_type.name}"
-        })
-        await send_ticket_email(req.email, new_ticket, event)
-        return TicketPurchaseResponse(
-            success=True,
-            ticket_id=str(new_ticket.id),
-            message="¡Entrada gratuita generada con éxito! Revisa tu email."
+        if not ticket_type or not ticket_type.is_active:
+            raise HTTPException(status_code=400, detail="El tipo de ticket no existe o no está activo.")
+            
+        event = ticket_type.event
+        if not event.is_active or not event.is_public:
+            raise HTTPException(status_code=400, detail="El evento no está disponible.")
+            
+        if ticket_type.stock <= 0:
+            raise HTTPException(status_code=400, detail="Entradas agotadas para este tipo de ticket.")
+            
+        # 2. Create Ticket
+        is_free = float(ticket_type.price) == 0
+        new_ticket = Ticket(
+            id=uuid.uuid4(),
+            ticket_type_id=ticket_type.id,
+            event_id=event.id,
+            purchaser_first_name=req.first_name,
+            purchaser_last_name=req.last_name,
+            purchaser_age=18,
+            purchaser_email=req.email,
+            status="valid" if is_free else "pending_payment"
         )
-
-    # 4. Generate MercadoPago Checkout Pro Preference (for paid tickets)
-    items = [{
-        "title": f"Entrada: {event.name} - {ticket_type.name}",
-        "quantity": 1,
-        "unit_price": float(ticket_type.price)
-    }]
-    
-    mp_result = await mp_service.create_checkout_preference(str(new_ticket.id), items, req.email)
-    
-    if not mp_result["success"]:
-        await db.rollback()
-        raise HTTPException(status_code=500, detail="Error al conectar con MercadoPago.")
         
-    new_ticket.mp_preference_id = mp_result["preference_id"]
-    await db.commit()
-    
-    return TicketPurchaseResponse(
-        success=True,
-        ticket_id=str(new_ticket.id),
-        init_point=mp_result["init_point"],
-        message="Redirigiendo a Mercado Pago..."
-    )
+        # Try to associate with existing user (wrapped in try just in case column user_id is missing)
+        try:
+            user_result = await db.execute(select(User).where(User.email == req.email.lower()))
+            existing_user = user_result.scalar_one_or_none()
+            if existing_user:
+                new_ticket.user_id = existing_user.id
+        except Exception as e:
+            logger.warning(f"⚠️ Could not associate user (maybe user_id column missing): {e}")
+            # We continue even if association fails
+            
+        db.add(new_ticket)
+        
+        # 3. Handle Free Ticket
+        if is_free:
+            if ticket_type.stock > 0:
+                ticket_type.stock -= 1
+            await db.commit()
+            
+            try:
+                await broadcast_event({
+                    "event": "ticket_sold",
+                    "ticket_id": str(new_ticket.id),
+                    "event_id": str(new_ticket.event_id),
+                    "ticket_type_id": str(new_ticket.ticket_type_id),
+                    "message": f"🎟️ Nueva cortesía generada: {ticket_type.name}"
+                })
+            except: pass
+
+            await send_ticket_email(req.email, new_ticket, event)
+            return {
+                "success": True,
+                "ticket_id": str(new_ticket.id),
+                "message": "¡Entrada gratuita generada con éxito! Revisa tu email."
+            }
+
+        # 4. Generate MercadoPago Checkout Pro Preference (for paid tickets)
+        items = [{
+            "title": f"Entrada: {event.name} - {ticket_type.name}",
+            "quantity": 1,
+            "unit_price": float(ticket_type.price)
+        }]
+        
+        mp_result = await mp_service.create_checkout_preference(str(new_ticket.id), items, req.email)
+        
+        if not mp_result["success"]:
+            await db.rollback()
+            return {"success": False, "message": f"Error MercadoPago: {mp_result.get('error')}"}
+            
+        new_ticket.mp_preference_id = mp_result["preference_id"]
+        await db.commit()
+        
+        return {
+            "success": True,
+            "ticket_id": str(new_ticket.id),
+            "init_point": mp_result["init_point"],
+            "message": "Redirigiendo a Mercado Pago..."
+        }
+    except Exception as e:
+        logger.error(f"❌ Error in purchase_ticket: {str(e)}", exc_info=True)
+        return {"success": False, "message": f"Error en el servidor: {str(e)}"}
 
 @router.get("/tickets/{ticket_id}", response_model=TicketResponse)
 async def get_ticket(ticket_id: uuid.UUID, db: AsyncSession = Depends(get_db)):

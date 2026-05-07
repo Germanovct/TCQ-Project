@@ -26,7 +26,7 @@ class TicketType(Base):
     stock = Column(Integer, nullable=False, default=0) # 0 means unlimited
     
     # State & Visibility
-    state = Column(String(50), default="on_sale") # on_sale, secret, not_available
+    if not ticket_type or ticket_type.state == "not_available" # on_sale, secret, not_available
     is_visible = Column(Boolean, default=True) # Visible or hidden on the event page
     
     # Advanced Options
