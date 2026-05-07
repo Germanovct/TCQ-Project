@@ -941,6 +941,7 @@ export default function App() {
           mobileOpen={mobileCartOpen}
           onClose={() => setMobileCartOpen(false)}
         />
+        </div>
       </div>
     </>
   );
