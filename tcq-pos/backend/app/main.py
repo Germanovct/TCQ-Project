@@ -41,11 +41,11 @@ async def lifespan(app: FastAPI):
     
     # Run migrations
     from .migrate import migrate
-    try:
-        await migrate()
-        logger.info("✅ Migrations applied")
-    except Exception as e:
-        logger.error(f"❌ Migration failed: {e}")
+    # try:
+    #     await migrate()
+    #     logger.info("✅ Migrations applied")
+    # except Exception as e:
+    #     logger.error(f"❌ Migration failed: {e}")
 
     if settings.DEBUG:
         await init_db()
@@ -88,6 +88,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal Server Error", "message": str(exc)},
+        headers={"Access-Control-Allow-Origin": "*"}
     )
 
 # Mount static files

@@ -19,7 +19,7 @@ from app.models.user import User
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Tickets"])
 
-@router.post("/tickets/purchase", response_model=TicketPurchaseResponse)
+@router.post("/tickets/purchase")
 async def purchase_ticket(req: TicketPurchaseRequest, db: AsyncSession = Depends(get_db)):
     # 1. Validate Ticket Type and Event
     tt_query = select(TicketType).options(selectinload(TicketType.event)).filter(TicketType.id == req.ticket_type_id)
