@@ -66,7 +66,6 @@ async def purchase_ticket(req: TicketPurchaseRequest, db: AsyncSession = Depends
             if existing_user:
                 new_ticket.user_id = existing_user.id
         except Exception as e:
-        except Exception as e:
             logger.warning(f"⚠️ Could not associate user (maybe user_id column missing): {e}")
             # We continue even if association fails
             

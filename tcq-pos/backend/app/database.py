@@ -23,8 +23,12 @@ if USE_SQLITE or "postgresql" not in DATABASE_URL:
     DATABASE_URL = f"sqlite+aiosqlite:///{db_path}"
     print(f"📦 Using SQLite (dev mode): {db_path}")
 else:
-    if DATABASE_URL.startswith("postgresql://"):
+    # Ensure we use the async driver
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif DATABASE_URL.startswith("postgresql://"):
         DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+    
     print(f"🐘 Using PostgreSQL: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else 'configured'}")
 
 # Async engine

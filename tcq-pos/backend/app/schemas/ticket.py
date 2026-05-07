@@ -15,14 +15,6 @@ class TicketPurchaseResponse(BaseModel):
     init_point: Optional[str] = None
     message: str
 
-class TicketValidationRequest(BaseModel):
-    qr_code: str
-
-class TicketValidationResponse(BaseModel):
-    success: bool
-    message: str
-    ticket: Optional[TicketResponse] = None
-
 class TicketResponse(BaseModel):
     id: UUID
     event_id: UUID
@@ -38,3 +30,11 @@ class TicketResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class TicketValidationRequest(BaseModel):
+    qr_code: str
+
+class TicketValidationResponse(BaseModel):
+    success: bool
+    message: str
+    ticket: Optional[TicketResponse] = None
