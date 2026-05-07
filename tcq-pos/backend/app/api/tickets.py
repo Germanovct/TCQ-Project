@@ -80,6 +80,11 @@ async def purchase_ticket(
             if ticket_type.stock > 0:
                 ticket_type.stock -= 1
             await db.commit()
+            await db.refresh(new_ticket)
+            
+            # Populate names for response
+            new_ticket.event_name = event.name
+            new_ticket.ticket_type_name = ticket_type.name
             
             try:
                 await broadcast_event({
@@ -128,9 +133,20 @@ async def purchase_ticket(
 
 @router.get("/tickets/{ticket_id}", response_model=TicketResponse)
 async def get_ticket(ticket_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    ticket = await db.get(Ticket, ticket_id)
+    query = select(Ticket).options(
+        selectinload(Ticket.event),
+        selectinload(Ticket.ticket_type)
+    ).filter(Ticket.id == ticket_id)
+    result = await db.execute(query)
+    ticket = result.scalar_one_or_none()
+    
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket no encontrado")
+    
+    # Populate names
+    ticket.event_name = ticket.event.name if ticket.event else "Evento"
+    ticket.ticket_type_name = ticket.ticket_type.name if ticket.ticket_type else "Ticket"
+    
     return ticket
 
 @router.post("/tickets/validate", response_model=TicketValidationResponse)
